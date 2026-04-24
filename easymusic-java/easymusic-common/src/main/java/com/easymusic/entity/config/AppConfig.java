@@ -4,6 +4,8 @@ import com.easymusic.utils.StringTools;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+import java.io.File;
+
 @Configuration
 public class AppConfig {
     @Value("${project.folder:}")
@@ -138,7 +140,16 @@ public class AppConfig {
     }
 
     public String getProjectFolder() {
-        if (!StringTools.isEmpty(projectFolder) && !projectFolder.endsWith("/")) {
+        if (!StringTools.isEmpty(projectFolder)) {
+            File folder = new File(projectFolder);
+            if (!folder.exists()) {
+                projectFolder = System.getProperty("user.dir");
+            }
+        }
+        if (StringTools.isEmpty(projectFolder)) {
+            projectFolder = System.getProperty("user.dir");
+        }
+        if (!projectFolder.endsWith("/")) {
             projectFolder = projectFolder + "/";
         }
         return projectFolder;

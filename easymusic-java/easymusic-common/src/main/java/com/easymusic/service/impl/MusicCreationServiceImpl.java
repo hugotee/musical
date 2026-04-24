@@ -1,10 +1,8 @@
 package com.easymusic.service.impl;
 
-import com.easymusic.api.MusicCreateApi;
 import com.easymusic.entity.config.AppConfig;
 import com.easymusic.entity.constants.Constants;
 import com.easymusic.entity.dto.MusicSettingDTO;
-import com.easymusic.entity.dto.MusicTaskDTO;
 import com.easymusic.entity.enums.*;
 import com.easymusic.entity.po.MusicCreation;
 import com.easymusic.entity.po.MusicInfo;
@@ -18,8 +16,6 @@ import com.easymusic.mappers.MusicCreationMapper;
 import com.easymusic.mappers.MusicInfoMapper;
 import com.easymusic.redis.RedisComponent;
 import com.easymusic.service.MusicCreationService;
-import com.easymusic.service.UserIntegralRecordService;
-import com.easymusic.spring.SpringContext;
 import com.easymusic.utils.JsonUtils;
 import com.easymusic.utils.StringTools;
 import jakarta.annotation.Resource;
@@ -28,7 +24,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.beans.PropertyDescriptor;
+import java.io.File;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -43,9 +45,6 @@ public class MusicCreationServiceImpl implements MusicCreationService {
 
     @Resource
     private MusicCreationMapper<MusicCreation, MusicCreationQuery> musicCreationMapper;
-
-    @Resource
-    private UserIntegralRecordService userIntegralRecordService;
 
     @Resource
     private MusicInfoMapper<MusicInfo, MusicInfoQuery> musicInfoMapper;
@@ -166,22 +165,17 @@ public class MusicCreationServiceImpl implements MusicCreationService {
         if (null == musicTypeEnum) {
             throw new BusinessException(ResponseCodeEnum.CODE_600);
         }
-        ModelInfo modelInfo = getModelInfo(musicTypeEnum, musicCreation.getModel());
-        String model = modelInfo.model;
+        getModelInfo(musicTypeEnum, musicCreation.getModel());
 
         List<SysDict> sysDictSubList = redisComponent.getDictSubList(musicTypeEnum.getDictCode());
+        if (sysDictSubList == null || sysDictSubList.isEmpty()) {
+            throw new BusinessException("系统配置错误，请联系管理员");
+        }
         Optional<SysDict> dictInfo = sysDictSubList.stream().filter(value -> value.getDictCode().equals(musicCreation.getModel())).findFirst();
-        SysDict sysDict = dictInfo.get();
-        if (null == sysDict) {
+        if (dictInfo.isEmpty()) {
             throw new BusinessException("系统配置错误，请联系管理员");
         }
         String creationId = StringTools.getRandomString(Constants.LENGTH_15);
-
-        Integer integral = Integer.parseInt(sysDict.getDictValue());
-        String apiCode = modelInfo.apiCode;
-
-        //扣减积分
-        userIntegralRecordService.changeUserIntegral(UserIntegralRecordTypeEnum.CREATE_MUSIC, creationId, musicCreation.getUserId(), -integral, null);
 
         Date curDate = new Date();
 
@@ -190,10 +184,7 @@ public class MusicCreationServiceImpl implements MusicCreationService {
         musicCreation.setCreateTime(curDate);
         musicCreationMapper.insert(musicCreation);
 
-
         String prompt = musicCreation.getPrompt();
-        MusicCreateApi musicCreateApi = (MusicCreateApi) SpringContext.getBean(apiCode);
-        List<String> itemIds;
         if (MusicModeTypeEnum.ADVANCED.getModeType().equals(musicCreation.getModeType())) {
             try {
                 for (MusicSettingEnum settingEnum : MusicSettingEnum.values()) {
@@ -206,50 +197,31 @@ public class MusicCreationServiceImpl implements MusicCreationService {
                     prompt = prompt + " " + settingEnum.getTypeDesc() + ":" + obj;
                 }
             } catch (Exception e) {
-                log.error("获取音乐设置信息失败");
+                log.error("获取音乐设置信息失败", e);
             }
         }
-        if (MusicTypeEnum.MUSIC.getType().equals(musicCreation.getMusicType())) {
-            itemIds = musicCreateApi.createMusic(model, prompt, musicCreation.getLyrics());
-        } else {
-            itemIds = musicCreateApi.createPureMusic(model, prompt);
-        }
-        if (itemIds == null || itemIds.isEmpty()) {
-            throw new BusinessException("音乐创作失败");
-        }
-        /**
-         * 插入音乐信息
-         */
-        List<MusicInfo> musicInfoList = new ArrayList<>();
+        // 这里先用本地固定 mp3 作为创作结果，保证创作闭环可直接演示。
+        String musicId = StringTools.getRandomNumber(Constants.LENGTH_12);
+        String audioPath = copyLocalDemoMusic(musicId);
+
+        MusicInfo musicInfo = new MusicInfo();
+        musicInfo.setMusicId(musicId);
+        musicInfo.setUserId(musicCreation.getUserId());
+        musicInfo.setCreationId(musicCreation.getCreationId());
+        musicInfo.setGoodCount(0);
+        musicInfo.setPlayCount(0);
+        musicInfo.setCreateTime(curDate);
+        musicInfo.setCommendType(CommendTypeEnum.NOT_COMMEND.getType());
+        musicInfo.setMusicStatus(MusicStatusEnum.CREATED.getStatus());
+        musicInfo.setTaskId(creationId);
+        musicInfo.setMusicType(musicCreation.getMusicType());
+        musicInfo.setMusicTitle(resolveDemoTitle(prompt));
+        musicInfo.setAudioPath(audioPath);
+        musicInfo.setLyrics("[]");
+        musicInfoMapper.insert(musicInfo);
 
         List<String> musicIdList = new ArrayList<>();
-
-        for (String item : itemIds) {
-            MusicInfo musicInfo = new MusicInfo();
-            musicInfo.setMusicId(StringTools.getRandomNumber(Constants.LENGTH_12));
-            musicInfo.setUserId(musicCreation.getUserId());
-            musicInfo.setCreationId(musicCreation.getCreationId());
-            musicInfo.setGoodCount(0);
-            musicInfo.setPlayCount(0);
-            musicInfo.setCreateTime(curDate);
-            musicInfo.setCommendType(CommendTypeEnum.NOT_COMMEND.getType());
-            musicInfo.setMusicStatus(MusicStatusEnum.CREATING.getStatus());
-            musicInfo.setTaskId(item);
-            musicInfo.setMusicType(musicCreation.getMusicType());
-            musicInfoList.add(musicInfo);
-
-            //将任务加入到队列
-            if (appConfig.getAutoCheckMusic()) {
-                MusicTaskDTO musicTaskDto = new MusicTaskDTO();
-                musicTaskDto.setApiCode(apiCode);
-                musicTaskDto.setMusicId(musicInfo.getMusicId());
-                musicTaskDto.setTaskId(item);
-                musicTaskDto.setMusicType(musicCreation.getMusicType());
-                redisComponent.addMusicCreateTask(musicTaskDto);
-            }
-            musicIdList.add(musicInfo.getMusicId());
-        }
-        musicInfoMapper.insertBatch(musicInfoList);
+        musicIdList.add(musicId);
         return musicIdList;
     }
 
@@ -274,5 +246,33 @@ public class MusicCreationServiceImpl implements MusicCreationService {
         } else {
             throw new BusinessException(ResponseCodeEnum.CODE_600);
         }
+    }
+
+    private String copyLocalDemoMusic(String musicId) {
+        try {
+            String sourcePath = "/Users/hugo/Downloads/逃跑计划 - 夜空中最亮的星.mp3";
+            File sourceFile = new File(sourcePath);
+            if (!sourceFile.exists()) {
+                throw new BusinessException("本地示例音乐文件不存在");
+            }
+            String folderName = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
+            String targetRelativePath = folderName + "/" + musicId + Constants.AUDIO_SUFFIX;
+            Path targetPath = Path.of(appConfig.getProjectFolder(), Constants.FILE_FOLDER_FILE, targetRelativePath);
+            Files.createDirectories(targetPath.getParent());
+            Files.copy(sourceFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            return targetRelativePath;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("复制本地示例音乐失败", e);
+            throw new BusinessException("复制本地示例音乐失败");
+        }
+    }
+
+    private String resolveDemoTitle(String prompt) {
+        if (!StringTools.isEmpty(prompt)) {
+            return prompt.length() > 30 ? prompt.substring(0, 30) : prompt;
+        }
+        return "夜空中最亮的星";
     }
 }
