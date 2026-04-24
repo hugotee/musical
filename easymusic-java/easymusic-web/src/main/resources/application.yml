@@ -29,8 +29,8 @@ web:
 # 接口key
 tianpuyue:
   api:
-    key: 123456 #ai接口key
-    domain: http://easyshop.byte361.com/api #配置为http://easyshop.byte361.com/api 走老罗模拟的接口，填写https://api.tianpuyue.cn 走天普乐官方
+    key: Tempo-c04cf5606ba31f40988e178529050774cfupf #ai接口key
+    domain: https://api.tianpuyue.cn #天谱乐官方API域名
     courseOrderId: 20251226104834vaU5W #这里配置购买的easyshop的课程的订单号，在easyshop.byte361.com 个人中心 已购课程 右上角的订单号，复制过来
 # 微信支付
 pay:
