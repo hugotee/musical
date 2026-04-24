@@ -48,8 +48,40 @@ public class MusicCreteApi4TianpuyueImpl implements MusicCreateApi {
         Map<String, String> header = new HashMap<>();
         header.put("Authorization", appConfig.getTianpuyueApiKey());
         header.put("Content-Type", "application/json; charset=utf-8");
-        header.put("courseOrderId", appConfig.getTianpuyueApiCourseOrderId());
         return header;
+    }
+
+    private boolean shouldAttachCallbackUrl() {
+        String webDomain = appConfig.getWebDomain();
+        if (webDomain == null || webDomain.isBlank()) {
+            return false;
+        }
+        String lowerCaseDomain = webDomain.toLowerCase();
+        return !lowerCaseDomain.contains("localhost") && !lowerCaseDomain.contains("127.0.0.1");
+    }
+
+    private String buildCallbackUrl(MusicTypeEnum musicTypeEnum) {
+        if (shouldAttachCallbackUrl()) {
+            return appConfig.getWebDomain() + String.format(CALL_BACL_URL, musicTypeEnum.getType());
+        }
+        // 本地开发环境使用一个可访问的公共回调地址，避免天谱乐拒绝空 callback_url
+        return "https://postman-echo.com/post";
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> extractItemIds(String response, String actionName) {
+        Integer status = (Integer) JSONPath.eval(response, "$.status");
+        if (!STATUS_SUCCESS.equals(status)) {
+            String message = (String) JSONPath.eval(response, "$.message");
+            log.error("{}失败，status={}, message={}, response={}", actionName, status, message, response);
+            return null;
+        }
+        Object data = JSONPath.eval(response, "$.data.item_ids");
+        if (data == null) {
+            log.error("{}成功但未返回 item_ids，response={}", actionName, response);
+            return null;
+        }
+        return (List<String>) data;
     }
 
     @Override
@@ -59,11 +91,13 @@ public class MusicCreteApi4TianpuyueImpl implements MusicCreateApi {
         params.put("prompt", prompt);
         params.put("lyrics", lyrics);
         params.put("model", model);
-        params.put("callback_url", appConfig.getWebDomain() + String.format(CALL_BACL_URL, MusicTypeEnum.MUSIC.getType()));
+        String callbackUrl = buildCallbackUrl(MusicTypeEnum.MUSIC);
+        if (callbackUrl != null) {
+            params.put("callback_url", callbackUrl);
+        }
         String jsonParams = JsonUtils.convertObj2Json(params);
         String response = OKHttpUtils.postRequest4Json(appConfig.getTianpuyueApiDomain() + URL_CREATE_MUSIC, header, jsonParams);
-        List<String> itemList = (List<String>) JSONPath.eval(response, "$.data.item_ids");
-        return itemList;
+        return extractItemIds(response, "歌曲创作");
     }
 
     @Override
@@ -111,11 +145,13 @@ public class MusicCreteApi4TianpuyueImpl implements MusicCreateApi {
         Map<String, Object> params = new HashMap<>();
         params.put("prompt", prompt);
         params.put("model", model);
-        params.put("callback_url", appConfig.getWebDomain() + String.format(CALL_BACL_URL, MusicTypeEnum.PURE.getType()));
+        String callbackUrl = buildCallbackUrl(MusicTypeEnum.PURE);
+        if (callbackUrl != null) {
+            params.put("callback_url", callbackUrl);
+        }
         String jsonParams = JsonUtils.convertObj2Json(params);
         String response = OKHttpUtils.postRequest4Json(appConfig.getTianpuyueApiDomain() + URL_CREATE_PURE_MUSIC, header, jsonParams);
-        List<String> itemList = (List<String>) JSONPath.eval(response, "$.data.item_ids");
-        return itemList;
+        return extractItemIds(response, "纯音乐创作");
     }
 
     @Override
