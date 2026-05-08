@@ -19,6 +19,7 @@ import com.easymusic.mappers.MusicCreationMapper;
 import com.easymusic.mappers.MusicInfoMapper;
 import com.easymusic.redis.RedisComponent;
 import com.easymusic.service.MusicCreationService;
+import com.easymusic.service.UserIntegralRecordService;
 import com.easymusic.utils.JsonUtils;
 import com.easymusic.utils.OKHttpUtils;
 import com.easymusic.utils.StringTools;
@@ -28,11 +29,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.beans.PropertyDescriptor;
-import java.io.File;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -60,6 +59,9 @@ public class MusicCreationServiceImpl implements MusicCreationService {
 
     @Resource
     private AppConfig appConfig;
+
+    @Resource
+    private UserIntegralRecordService userIntegralRecordService;
 
     /**
      * 根据条件查询列表
@@ -181,6 +183,9 @@ public class MusicCreationServiceImpl implements MusicCreationService {
         if (dictInfo.isEmpty()) {
             throw new BusinessException("系统配置错误，请联系管理员");
         }
+        SysDict sysDict = dictInfo.get();
+        Integer integralCost = Integer.parseInt(sysDict.getDictValue());
+
         String creationId = StringTools.getRandomString(Constants.LENGTH_15);
 
         Date curDate = new Date();
@@ -189,6 +194,14 @@ public class MusicCreationServiceImpl implements MusicCreationService {
         musicCreation.setSettings(JsonUtils.convertObj2Json(musicSettingDTO));
         musicCreation.setCreateTime(curDate);
         musicCreationMapper.insert(musicCreation);
+
+        // 扣减积分
+        userIntegralRecordService.changeUserIntegral(
+                UserIntegralRecordTypeEnum.CREATE_MUSIC,
+                creationId,
+                musicCreation.getUserId(),
+                -integralCost,
+                null);
 
         String prompt = musicCreation.getPrompt();
         if (MusicModeTypeEnum.ADVANCED.getModeType().equals(musicCreation.getModeType())) {
@@ -266,7 +279,7 @@ public class MusicCreationServiceImpl implements MusicCreationService {
 
         Map<String, Object> params = new HashMap<>();
         params.put("prompt", prompt);
-        params.put("duration", MusicTypeEnum.PURE.getType().equals(musicType) ? 30 : 30);
+        params.put("duration", 30);
         params.put("guidance_scale", 3.0);
 
         String jsonBody = JSON.toJSONString(params);
@@ -299,33 +312,5 @@ public class MusicCreationServiceImpl implements MusicCreationService {
         // 下载 WAV 并转为 mp3 后缀存储（浏览器兼容）
         OKHttpUtils.download(result.getAudioUrl(), targetPath.toString());
         return relativePath;
-    }
-
-    private String copyLocalDemoMusic(String musicId) {
-        try {
-            String sourcePath = "/Users/hugo/Downloads/逃跑计划 - 夜空中最亮的星.mp3";
-            File sourceFile = new File(sourcePath);
-            if (!sourceFile.exists()) {
-                throw new BusinessException("本地示例音乐文件不存在");
-            }
-            String folderName = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
-            String targetRelativePath = folderName + "/" + musicId + Constants.AUDIO_SUFFIX;
-            Path targetPath = Path.of(appConfig.getProjectFolder(), Constants.FILE_FOLDER_FILE, targetRelativePath);
-            Files.createDirectories(targetPath.getParent());
-            Files.copy(sourceFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-            return targetRelativePath;
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("复制本地示例音乐失败", e);
-            throw new BusinessException("复制本地示例音乐失败");
-        }
-    }
-
-    private String resolveDemoTitle(String prompt) {
-        if (!StringTools.isEmpty(prompt)) {
-            return prompt.length() > 30 ? prompt.substring(0, 30) : prompt;
-        }
-        return "夜空中最亮的星";
     }
 }

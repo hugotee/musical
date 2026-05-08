@@ -227,7 +227,7 @@ const createMusic = async () => {
   userInfoStore.updateLastReloadTime()
 
   proxy.Alert({
-    message: '创建成功音乐创作中....',
+    message: '创作成功',
   })
 }
 
