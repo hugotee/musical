@@ -705,4 +705,8 @@
     <update id="updateMusicCount">
         update music_info set play_count = play_count+1 where music_id = #{musicId}
     </update>
+
+    <update id="updateGoodCount">
+        update music_info set good_count = good_count + #{delta} where music_id = #{musicId}
+    </update>
 </mapper>

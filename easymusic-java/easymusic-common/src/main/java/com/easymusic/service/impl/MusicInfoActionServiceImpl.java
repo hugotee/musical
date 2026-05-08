@@ -162,6 +162,7 @@ public class MusicInfoActionServiceImpl implements MusicInfoActionService {
         MusicInfoAction musicInfoAction = this.musicInfoActionMapper.selectByMusicIdAndUserId(musicId, userId);
         if (musicInfoAction != null) {
             this.musicInfoActionMapper.deleteByMusicIdAndUserId(musicId, userId);
+            this.musicInfoMapper.updateGoodCount(musicId, -1);
             return;
         }
         MusicInfo musicInfo = this.musicInfoMapper.selectByMusicId(musicId);
@@ -174,5 +175,6 @@ public class MusicInfoActionServiceImpl implements MusicInfoActionService {
         musicInfoAction.setActionType(MusicActionTypeEnum.GOOD.getType());
         musicInfoAction.setUserId(userId);
         this.musicInfoActionMapper.insert(musicInfoAction);
+        this.musicInfoMapper.updateGoodCount(musicId, 1);
     }
 }
