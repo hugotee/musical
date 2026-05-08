@@ -36,10 +36,10 @@ public class MusicController extends ABaseController {
     private RecommendationService recommendationService;
 
     @RequestMapping("/loadRecommendMusic")
-    public ResponseVO loadRecommendMusic() {
+    public ResponseVO loadRecommendMusic(String type) {
         TokenUserInfoDTO tokenUserInfoDTO = getTokenUserInfo(null);
         String userId = tokenUserInfoDTO == null ? null : tokenUserInfoDTO.getUserId();
-        return getSuccessResponseVO(recommendationService.recommend(userId, 12));
+        return getSuccessResponseVO(recommendationService.recommend(userId, 12, type));
     }
 
     @RequestMapping("/loadCommendMusic")

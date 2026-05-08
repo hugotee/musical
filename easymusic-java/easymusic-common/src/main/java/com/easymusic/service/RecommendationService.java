@@ -10,10 +10,15 @@ import java.util.List;
 public interface RecommendationService {
 
     /**
-     * 根据用户偏好推荐音乐
-     * @param userId 当前用户ID，为null时使用热度排序
-     * @param limit  返回数量
-     * @return 推荐音乐列表（含用户信息和点赞状态）
+     * 混合推荐（默认，融合所有算法）
      */
     List<MusicInfo> recommend(String userId, int limit);
+
+    /**
+     * 指定算法类型推荐
+     * @param userId 当前用户ID，为null时使用热度排序
+     * @param limit  返回数量
+     * @param type   算法类型：content / userCf / itemCf / popularity / hybrid
+     */
+    List<MusicInfo> recommend(String userId, int limit, String type);
 }
