@@ -61,6 +61,9 @@ public class RecommendationServiceImpl implements RecommendationService {
 
         // 按类型计算分数
         Map<String, Double> scores;
+        if (type == null) {
+            type = "hybrid";
+        }
         switch (type) {
             case "content":
                 scores = scoreByContent(candidates, userId, creationMap, maxPlay, maxGood, now);
