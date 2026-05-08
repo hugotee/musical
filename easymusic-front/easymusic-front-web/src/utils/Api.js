@@ -7,7 +7,8 @@ const Api = {
     updateUserInfo: "/account/updateUserInfo",//保存用户信息
     updatePassword: "/account/updatePassword",//修改密码
     getLoginInfo: "/account/getLoginInfo",//获取登录信息
-    loadCommendMusic: "/music/loadCommendMusic",//获取推荐音乐
+    loadCommendMusic: "/music/loadCommendMusic",//获取推荐音乐(旧)
+    loadRecommendMusic: "/music/loadRecommendMusic",//获取推荐音乐(新推荐算法)
     loadLatestMusic: "/music/loadLatestMusic",//获取最新的音乐
     doGood: "/music/doGood",//音乐点赞
     updatePlayCount: "/music/updatePlayCount",//更新播放数

@@ -39,7 +39,7 @@ const musicPlayStore = useMusicPlayStore();
 const commendList = ref([]);
 const loadCommend = async () => {
   let result = await proxy.Request({
-    url: proxy.Api.loadCommendMusic,
+    url: proxy.Api.loadRecommendMusic,
   });
   if (!result) {
     return;
