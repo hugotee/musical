@@ -22,7 +22,7 @@ public enum ModelType4PureMusicEnum {
 
     public static ModelType4PureMusicEnum getById(String id) {
         Optional<ModelType4PureMusicEnum> typeEnum = Arrays.stream(ModelType4PureMusicEnum.values()).filter(value -> value.getModelId().equals(id)).findFirst();
-        return typeEnum.get();
+        return typeEnum.orElse(null);
     }
 
     public String getApiCode() {

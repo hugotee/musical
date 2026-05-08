@@ -56,15 +56,6 @@
           </div>
         </div>
       </template>
-      <div class="part-title">选择模型</div>
-      <!-- 下拉框 -->
-      <div class="model-select">
-        <el-radio-group v-model="formData.model" class="model-select" size="large">
-          <el-radio-button v-for="model in music_models" :value="model.dictCode" :label="model.dictCode">
-          </el-radio-button>
-        </el-radio-group>
-        <div class="model-tips">{{ currentModel?.dictDesc }}</div>
-      </div>
       <div class="submit-btn" @click="createMusic">
         <el-icon class="is-loading" v-if="creating">
           <Loading style="width: 1em; height: 1em" />
@@ -84,7 +75,6 @@ import {
   getCurrentInstance,
   nextTick,
   onMounted,
-  computed,
   onUnmounted,
 } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -145,17 +135,6 @@ const getPrompt = () => {
   formData.value.prompt = prompts[Math.floor(Math.random() * prompts.length)]
 }
 
-const music_models = computed(() => {
-  const models =
-    formData.value.musicType == 0
-      ? sysSetting.value[SYS_SETTING_KEY.music_model.key]
-      : sysSetting.value[SYS_SETTING_KEY.music_model_pure.key]
-  if (models && models.length > 0 && !formData.value.model) {
-    formData.value.model = models[0].dictCode
-  }
-  return models
-})
-
 const sysSetting = ref({})
 const loadSysSetting = async () => {
   let result = await proxy.Request({
@@ -178,19 +157,10 @@ const loadSysSetting = async () => {
   getPrompt()
 }
 
-const currentModel = computed(() => {
-  if (music_models.value) {
-    return music_models.value.find((item) => {
-      return item.dictCode == formData.value.model
-    })
-  } else {
-    return {}
-  }
-})
-
 const formData = ref({
   modeType: 0,
   musicType: 0,
+  model: "V3",
 })
 const formDataRef = ref()
 const rules = {
