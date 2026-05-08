@@ -215,6 +215,7 @@ const createMusic = async () => {
     url: proxy.Api.createMusic,
     params: { ...formData.value },
     showLoading: false,
+    timeout: 180 * 1000,
   })
   creating.value = false
   if (!result) {
