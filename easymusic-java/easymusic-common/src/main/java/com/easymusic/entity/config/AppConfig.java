@@ -70,6 +70,9 @@ public class AppConfig {
     @Value("${auto.checkMusic:false}")
     private Boolean autoCheckMusic;
 
+    @Value("${musicgen.server.url:http://localhost:8092}")
+    private String musicgenServerUrl;
+
 
     public String getTianpuyueApiCourseOrderId() {
         return tianpuyueApiCourseOrderId;
@@ -173,5 +176,9 @@ public class AppConfig {
 
     public String getAdminPassword() {
         return adminPassword;
+    }
+
+    public String getMusicgenServerUrl() {
+        return musicgenServerUrl;
     }
 }

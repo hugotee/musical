@@ -47,3 +47,7 @@ pay:
 auto:
   checkPay: true
   checkMusic: true
+# MusicGen AI音乐生成服务地址
+musicgen:
+  server:
+    url: http://localhost:8092

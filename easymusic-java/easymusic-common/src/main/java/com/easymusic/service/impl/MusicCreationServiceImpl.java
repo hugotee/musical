@@ -1,7 +1,10 @@
 package com.easymusic.service.impl;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.easymusic.entity.config.AppConfig;
 import com.easymusic.entity.constants.Constants;
+import com.easymusic.entity.dto.MusicCreationResultDTO;
 import com.easymusic.entity.dto.MusicSettingDTO;
 import com.easymusic.entity.enums.*;
 import com.easymusic.entity.po.MusicCreation;
@@ -17,6 +20,7 @@ import com.easymusic.mappers.MusicInfoMapper;
 import com.easymusic.redis.RedisComponent;
 import com.easymusic.service.MusicCreationService;
 import com.easymusic.utils.JsonUtils;
+import com.easymusic.utils.OKHttpUtils;
 import com.easymusic.utils.StringTools;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +37,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -200,9 +206,14 @@ public class MusicCreationServiceImpl implements MusicCreationService {
                 log.error("获取音乐设置信息失败", e);
             }
         }
-        // 这里先用本地固定 mp3 作为创作结果，保证创作闭环可直接演示。
+        // 调用 MusicGen AI 服务生成音乐
+        MusicCreationResultDTO genResult = callMusicGen(prompt, musicCreation.getMusicType());
+        if (!genResult.getCreateSuccess()) {
+            throw new BusinessException("AI音乐生成失败，请稍后重试");
+        }
+
         String musicId = StringTools.getRandomNumber(Constants.LENGTH_12);
-        String audioPath = copyLocalDemoMusic(musicId);
+        String localPath = downloadMusicGenAudio(genResult, musicId);
 
         MusicInfo musicInfo = new MusicInfo();
         musicInfo.setMusicId(musicId);
@@ -213,10 +224,11 @@ public class MusicCreationServiceImpl implements MusicCreationService {
         musicInfo.setCreateTime(curDate);
         musicInfo.setCommendType(CommendTypeEnum.NOT_COMMEND.getType());
         musicInfo.setMusicStatus(MusicStatusEnum.CREATED.getStatus());
-        musicInfo.setTaskId(creationId);
+        musicInfo.setTaskId(genResult.getTaskId());
         musicInfo.setMusicType(musicCreation.getMusicType());
-        musicInfo.setMusicTitle(resolveDemoTitle(prompt));
-        musicInfo.setAudioPath(audioPath);
+        musicInfo.setMusicTitle(genResult.getTitle() != null ? genResult.getTitle() : prompt.substring(0, Math.min(30, prompt.length())));
+        musicInfo.setDuration(genResult.getDuration());
+        musicInfo.setAudioPath(localPath);
         musicInfo.setLyrics("[]");
         musicInfoMapper.insert(musicInfo);
 
@@ -246,6 +258,47 @@ public class MusicCreationServiceImpl implements MusicCreationService {
         } else {
             throw new BusinessException(ResponseCodeEnum.CODE_600);
         }
+    }
+
+    private MusicCreationResultDTO callMusicGen(String prompt, Integer musicType) {
+        String serverUrl = appConfig.getMusicgenServerUrl();
+        String url = serverUrl + "/api/generate";
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("prompt", prompt);
+        params.put("duration", MusicTypeEnum.PURE.getType().equals(musicType) ? 30 : 30);
+        params.put("guidance_scale", 3.0);
+
+        String jsonBody = JSON.toJSONString(params);
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "application/json");
+
+        // MusicGen 生成需要约 90 秒，超时设为 180 秒
+        String responseStr = OKHttpUtils.postRequest4Json(url, headers, jsonBody, 180);
+        JSONObject json = JSON.parseObject(responseStr);
+
+        MusicCreationResultDTO result = new MusicCreationResultDTO();
+        result.setCreateSuccess(json.getBoolean("createSuccess"));
+        result.setTaskId(json.getString("taskId"));
+        result.setTitle(json.getString("title"));
+        result.setDuration(json.getInteger("duration"));
+        result.setAudioUrl(serverUrl + json.getString("audioUrl"));
+        return result;
+    }
+
+    private String downloadMusicGenAudio(MusicCreationResultDTO result, String musicId) {
+        String folderName = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
+        String relativePath = folderName + "/" + musicId + Constants.AUDIO_SUFFIX;
+        Path targetPath = Path.of(appConfig.getProjectFolder(), Constants.FILE_FOLDER_FILE, relativePath);
+        try {
+            Files.createDirectories(targetPath.getParent());
+        } catch (Exception e) {
+            log.error("创建目录失败", e);
+            throw new BusinessException("文件存储异常");
+        }
+        // 下载 WAV 并转为 mp3 后缀存储（浏览器兼容）
+        OKHttpUtils.download(result.getAudioUrl(), targetPath.toString());
+        return relativePath;
     }
 
     private String copyLocalDemoMusic(String musicId) {

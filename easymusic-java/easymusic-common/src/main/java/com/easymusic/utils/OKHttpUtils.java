@@ -73,22 +73,24 @@ public class OKHttpUtils {
     }
 
     public static String postRequest4Json(String url, Map<String, String> header, String params) throws BusinessException {
+        return postRequest4Json(url, header, params, TIME_OUT_SECONDS);
+    }
+
+    public static String postRequest4Json(String url, Map<String, String> header, String params, int timeoutSeconds) throws BusinessException {
         ResponseBody responseBody = null;
         String responseStr = "";
         try {
-            OkHttpClient.Builder clientBuilder = getClientBuilder();
-            OkHttpClient client = clientBuilder.build();
-            Request.Builder requestBuilder = new Request.Builder();
-            Request.Builder builder = requestBuilder.url(url);
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .followRedirects(false)
+                    .retryOnConnectionFailure(false)
+                    .connectTimeout(timeoutSeconds, TimeUnit.SECONDS)
+                    .readTimeout(timeoutSeconds, TimeUnit.SECONDS)
+                    .build();
+            Request.Builder builder = new Request.Builder().url(url);
             if (null != header) {
                 for (Map.Entry<String, String> map : header.entrySet()) {
                     String key = map.getKey();
-                    String value;
-                    if (map.getValue() == null) {
-                        value = "";
-                    } else {
-                        value = map.getValue();
-                    }
+                    String value = map.getValue() == null ? "" : map.getValue();
                     builder.addHeader(key, value);
                 }
             }
