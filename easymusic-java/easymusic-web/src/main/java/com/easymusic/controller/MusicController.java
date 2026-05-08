@@ -13,6 +13,7 @@ import com.easymusic.entity.vo.ResponseVO;
 import com.easymusic.service.MusicCreationService;
 import com.easymusic.service.MusicInfoActionService;
 import com.easymusic.service.MusicInfoService;
+import com.easymusic.service.RecommendationService;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotEmpty;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +31,16 @@ public class MusicController extends ABaseController {
 
     @Resource
     private MusicInfoActionService musicInfoActionService;
+
+    @Resource
+    private RecommendationService recommendationService;
+
+    @RequestMapping("/loadRecommendMusic")
+    public ResponseVO loadRecommendMusic() {
+        TokenUserInfoDTO tokenUserInfoDTO = getTokenUserInfo(null);
+        String userId = tokenUserInfoDTO == null ? null : tokenUserInfoDTO.getUserId();
+        return getSuccessResponseVO(recommendationService.recommend(userId, 12));
+    }
 
     @RequestMapping("/loadCommendMusic")
     public ResponseVO loadCommendMusic() {
