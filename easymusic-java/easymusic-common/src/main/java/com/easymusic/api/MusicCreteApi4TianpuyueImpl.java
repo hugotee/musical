@@ -96,7 +96,7 @@ public class MusicCreteApi4TianpuyueImpl implements MusicCreateApi {
             params.put("callback_url", callbackUrl);
         }
         String jsonParams = JsonUtils.convertObj2Json(params);
-        String response = OKHttpUtils.postRequest4Json(appConfig.getTianpuyueApiDomain() + URL_CREATE_MUSIC, header, jsonParams);
+        String response = OKHttpUtils.postRequest4Json(appConfig.getTianpuyueApiDomain() + URL_CREATE_MUSIC, header, jsonParams, 30);
         return extractItemIds(response, "歌曲创作");
     }
 
@@ -106,7 +106,7 @@ public class MusicCreteApi4TianpuyueImpl implements MusicCreateApi {
         Map<String, Object> params = new HashMap<>();
         params.put("item_ids", new String[]{itemId});
         String jsonParams = JsonUtils.convertObj2Json(params);
-        String response = OKHttpUtils.postRequest4Json(appConfig.getTianpuyueApiDomain() + URL_QUERY_MUSIC, header, jsonParams);
+        String response = OKHttpUtils.postRequest4Json(appConfig.getTianpuyueApiDomain() + URL_QUERY_MUSIC, header, jsonParams, 30);
         JSONObject jsonObject = (JSONObject) JSONPath.eval(response, "$.data.songs[0]");
         return getMusicResultDTO((Integer) JSONPath.eval(response, "$.status"), jsonObject, MusicTypeEnum.MUSIC);
     }
@@ -150,7 +150,7 @@ public class MusicCreteApi4TianpuyueImpl implements MusicCreateApi {
             params.put("callback_url", callbackUrl);
         }
         String jsonParams = JsonUtils.convertObj2Json(params);
-        String response = OKHttpUtils.postRequest4Json(appConfig.getTianpuyueApiDomain() + URL_CREATE_PURE_MUSIC, header, jsonParams);
+        String response = OKHttpUtils.postRequest4Json(appConfig.getTianpuyueApiDomain() + URL_CREATE_PURE_MUSIC, header, jsonParams, 30);
         return extractItemIds(response, "纯音乐创作");
     }
 
@@ -160,7 +160,7 @@ public class MusicCreteApi4TianpuyueImpl implements MusicCreateApi {
         Map<String, Object> params = new HashMap<>();
         params.put("item_ids", new String[]{itemId});
         String jsonParams = JsonUtils.convertObj2Json(params);
-        String response = OKHttpUtils.postRequest4Json(appConfig.getTianpuyueApiDomain() + URL_QUERY_PURE_MUSIC, header, jsonParams);
+        String response = OKHttpUtils.postRequest4Json(appConfig.getTianpuyueApiDomain() + URL_QUERY_PURE_MUSIC, header, jsonParams, 30);
         JSONObject jsonObject = (JSONObject) JSONPath.eval(response, "$.data.instrumentals[0]");
         return getMusicResultDTO((Integer) JSONPath.eval(response, "$.status"), jsonObject, MusicTypeEnum.PURE);
     }
