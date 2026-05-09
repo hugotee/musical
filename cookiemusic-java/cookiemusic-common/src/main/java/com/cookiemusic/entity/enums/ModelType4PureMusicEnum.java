@@ -5,8 +5,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 public enum ModelType4PureMusicEnum {
-    V3("V3", "MusicGen Small", "tianpuyueApi", "本地生成最长30s的纯音乐"),
-    V3_5("V3.5", "MusicGen Small", "tianpuyueApi", "本地生成最长30s的纯音乐");
+    V3("V3", "MusicGen Small", "tianpuyueApi", "本地生成最长30s的纯音乐");
 
     private String modelId;
     private String modelCode;

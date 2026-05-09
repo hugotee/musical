@@ -161,10 +161,15 @@ const getModelDictKey = () => {
 
 const currentModelOptions = computed(() => {
   const models = sysSetting.value[getModelDictKey()] || []
-  return models.map((item) => {
+  const availableModels =
+    formData.value.musicType == 1
+      ? models.filter((item) => item.dictCode === "V3")
+      : models
+  return availableModels.map((item) => {
+    const modelName = formData.value.musicType == 1 ? "MusicGen Small" : item.dictCode
     return {
       ...item,
-      modelLabel: `${item.dictCode} · ${item.dictValue}积分`,
+      modelLabel: `${modelName} · ${item.dictValue}积分`,
     }
   })
 })
