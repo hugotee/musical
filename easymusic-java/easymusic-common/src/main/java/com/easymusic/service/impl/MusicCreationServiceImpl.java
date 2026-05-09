@@ -220,7 +220,8 @@ public class MusicCreationServiceImpl implements MusicCreationService {
             }
         }
         // 调用 MusicGen AI 服务生成音乐
-        MusicCreationResultDTO genResult = callMusicGen(prompt, musicCreation.getMusicType());
+        MusicCreationResultDTO genResult = callMusicGen(prompt, musicCreation.getMusicType(),
+                musicSettingDTO.getMusicGener(), musicSettingDTO.getMusicEmotion(), musicSettingDTO.getMusicSex());
         if (!genResult.getCreateSuccess()) {
             throw new BusinessException("AI音乐生成失败，请稍后重试");
         }
@@ -273,7 +274,8 @@ public class MusicCreationServiceImpl implements MusicCreationService {
         }
     }
 
-    private MusicCreationResultDTO callMusicGen(String prompt, Integer musicType) {
+    private MusicCreationResultDTO callMusicGen(String prompt, Integer musicType,
+                                                String musicGener, String musicEmotion, String musicSex) {
         String serverUrl = appConfig.getMusicgenServerUrl();
         String url = serverUrl + "/api/generate";
 
@@ -281,6 +283,16 @@ public class MusicCreationServiceImpl implements MusicCreationService {
         params.put("prompt", prompt);
         params.put("duration", 30);
         params.put("guidance_scale", 3.0);
+        params.put("musicType", musicType);
+        if (musicGener != null && !musicGener.isBlank()) {
+            params.put("musicGener", musicGener);
+        }
+        if (musicEmotion != null && !musicEmotion.isBlank()) {
+            params.put("musicEmotion", musicEmotion);
+        }
+        if (musicSex != null && !musicSex.isBlank()) {
+            params.put("musicSex", musicSex);
+        }
 
         String jsonBody = JSON.toJSONString(params);
         Map<String, String> headers = new HashMap<>();
