@@ -2,47 +2,46 @@
   <div class="left-side-panel">
     <div class="bg"></div>
     <div class="left-side">
-      <div class="logo">CookieMusic</div>
+      <div class="logo">
+        <span class="logo-icon">♪</span>
+        <span>CookieMusic</span>
+      </div>
       <div class="menu-list">
         <template v-for="item in menuList">
-          <div :class="[
-              'menu-item',
-              item.codes.includes(route.meta.code) ? 'active' : '',
-            ]" @click="jump(item)">
+          <div :class="['menu-item', item.codes.includes(route.meta.code) ? 'active' : '']" @click="jump(item)">
             <div :class="['iconfont', 'icon-' + item.icon]"></div>
             <div class="menu-name">{{ item.name }}</div>
+            <div class="menu-dot" v-if="item.codes.includes(route.meta.code)"></div>
           </div>
         </template>
       </div>
-      <div class="integral-panel">
-        <div class="integra">
-          积分：{{ userInfoStore.userInfo.integral || 0 }}
+      <div class="bottom-section">
+        <div class="integral-panel">
+          <div class="integral-label">积分余额</div>
+          <div class="integral-value">{{ userInfoStore.userInfo.integral || 0 }}</div>
+          <div class="record-btn" @click="showIntegralRecord">积分记录 →</div>
         </div>
-        <div class="record-btn" @click="showIntegralRecord">积分记录</div>
-      </div>
-      <div class="user-info-panel">
-        <div class="login-btn" @click="login" v-if="Object.keys(userInfoStore.userInfo).length == 0">
-          登录
+        <div class="user-info-panel">
+          <div class="login-btn" @click="login" v-if="Object.keys(userInfoStore.userInfo).length == 0">
+            登录 / 注册
+          </div>
+          <el-popover v-else popper-class="user-info-popper" placement="top" trigger="click" :show-arrow="false" :offset="5" :width="160" ref="userInfoPopoverRef">
+            <template #reference>
+              <div class="user-info">
+                <Avatar :avatar="userInfoStore.userInfo.avatar" :width="30"></Avatar>
+                <div class="user-name">{{ userInfoStore.userInfo.nickName }}</div>
+              </div>
+            </template>
+            <div class="menu-item" @click="updatePassword">修改密码</div>
+            <div class="menu-item" @click="editUserInfo">编辑资料</div>
+            <div class="menu-item" @click="logout">退出登录</div>
+          </el-popover>
         </div>
-        <el-popover popper-class="user-info-popper" placement="top" trigger="click" :show-arrow="false" :offset="5"
-          :width="150" ref="userInfoPopoverRef">
-          <template #reference>
-            <div class="user-info" v-if="Object.keys(userInfoStore.userInfo).length > 0">
-              <Avatar :avatar="userInfoStore.userInfo.avatar" :width="30"></Avatar>
-              <div class="user-name">{{ userInfoStore.userInfo.nickName }}</div>
-            </div>
-          </template>
-          <div class="menu-item" @click="updatePassword">修改密码</div>
-          <div class="menu-item" @click="editUserInfo">编辑个人资料</div>
-          <div class="menu-item" @click="logout">退出登录</div>
-        </el-popover>
       </div>
     </div>
   </div>
   <EditUser ref="editUserRef"></EditUser>
-
   <UpdatePassword ref="updatePasswordRef"></UpdatePassword>
-
   <IntegralRecord ref="integralRecordRef"></IntegralRecord>
 </template>
 
@@ -50,52 +49,27 @@
 import IntegralRecord from '@/views/my/IntegralRecord.vue'
 import UpdatePassword from '@/views/my/UpdatePassword.vue'
 import EditUser from '@/views/my/EditUser.vue'
-import { ref, reactive, getCurrentInstance, nextTick } from 'vue'
+import { ref, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 const { proxy } = getCurrentInstance()
 const router = useRouter()
 const route = useRoute()
-
 import { useUserInfoStore } from '@/stores/userInfoStore'
 const userInfoStore = useUserInfoStore()
 
 const menuList = ref([
-  {
-    name: '首页',
-    icon: 'home',
-    codes: ['index'],
-    path: '/',
-  },
-  {
-    name: '创作音乐',
-    icon: 'music',
-    path: '/idea',
-    codes: ['idea', 'pure'],
-  },
-  {
-    name: '我的',
-    icon: 'user',
-    path: '/my',
-    codes: ['my'],
-  },
-  {
-    name: '充值',
-    icon: 'buy',
-    path: '/buy',
-    codes: ['buy'],
-  },
+  { name: '首页', icon: 'home', codes: ['index'], path: '/' },
+  { name: '创作音乐', icon: 'music', path: '/idea', codes: ['idea', 'pure'] },
+  { name: '我的', icon: 'user', path: '/my', codes: ['my'] },
+  { name: '充值', icon: 'buy', path: '/buy', codes: ['buy'] },
 ])
 
 const jump = (item) => {
-  if (item.path == '/my' && !userInfoStore.checkLogin()) {
-    return
-  }
+  if (item.path == '/my' && !userInfoStore.checkLogin()) return
   router.push(item.path)
 }
 
-const login = () => {
-  userInfoStore.showLogin = true
-}
+const login = () => { userInfoStore.showLogin = true }
 
 const userInfoPopoverRef = ref()
 const logout = async () => {
@@ -103,12 +77,8 @@ const logout = async () => {
   proxy.Confirm({
     message: '确定要退出吗?',
     okfun: async () => {
-      let result = await proxy.Request({
-        url: proxy.Api.logout,
-      })
-      if (!result) {
-        return
-      }
+      let result = await proxy.Request({ url: proxy.Api.logout })
+      if (!result) return
       userInfoStore.userInfo = {}
       userInfoStore.showLogin = false
       localStorage.removeItem('token')
@@ -117,171 +87,109 @@ const logout = async () => {
 }
 
 const editUserRef = ref()
-const editUserInfo = () => {
-  userInfoPopoverRef.value.hide()
-  editUserRef.value.show()
-}
-
 const updatePasswordRef = ref()
-const updatePassword = () => {
-  userInfoPopoverRef.value.hide()
-  updatePasswordRef.value.show()
-}
-
 const integralRecordRef = ref()
-const showIntegralRecord = () => {
-  integralRecordRef.value.show()
-}
+const editUserInfo = () => { userInfoPopoverRef.value.hide(); editUserRef.value.show() }
+const updatePassword = () => { userInfoPopoverRef.value.hide(); updatePasswordRef.value.show() }
+const showIntegralRecord = () => { integralRecordRef.value.show() }
 </script>
 
 <style lang="scss" scoped>
 .left-side-panel {
-  width: 200px;
+  width: 210px;
   height: 100%;
   color: #fff;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(13, 28, 35, 0.96), rgba(8, 17, 22, 0.98)),
-    var(--panelBgSolid);
+  background: linear-gradient(180deg, rgba(10, 20, 28, 0.97), rgba(6, 13, 18, 0.99));
   border-right: 1px solid var(--line);
   .bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 405px;
-    width: 200px;
-    background: url('../assets/img/left-side-bg.png');
-    background-size: 100% 100%;
-    background-position: center center;
-    z-index: 0;
-    opacity: 0.22;
-    filter: saturate(0.4);
+    position: fixed; top: 0; left: 0;
+    height: 360px; width: 210px;
+    background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(100,216,203,0.10), transparent);
+    z-index: 0; pointer-events: none;
   }
   .left-side {
-    position: absolute;
-    z-index: 1;
-    width: 200px;
-    height: calc(100vh);
-    display: flex;
-    flex-direction: column;
+    position: relative; z-index: 1;
+    width: 210px; height: 100vh;
+    display: flex; flex-direction: column;
     .logo {
-      font-size: 22px;
-      font-weight: 800;
-      padding: 24px 20px 18px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 20px; font-weight: 700;
+      padding: 26px 20px 22px;
       color: var(--HiText);
-      text-shadow: 0 8px 30px rgba(125, 226, 209, 0.28);
+      letter-spacing: -0.01em;
+      .logo-icon { font-size: 26px; color: var(--accent); }
     }
     .menu-list {
-      flex: 1;
+      flex: 1; padding: 0 10px;
       .menu-item {
-        padding: 12px 14px 12px 20px;
-        margin: 4px 12px;
+        display: flex; align-items: center;
+        padding: 11px 14px;
+        margin-bottom: 2px;
         color: var(--text);
-        display: flex;
-        align-items: center;
         cursor: pointer;
         border-radius: 12px;
-        transition: background 0.2s, color 0.2s, transform 0.2s;
+        transition: all var(--transition);
+        position: relative;
+        .iconfont { font-size: 19px; width: 24px; text-align: center; }
+        .menu-name { margin-left: 10px; font-size: 14px; font-weight: 500; }
+        .menu-dot { display: none; }
         &:hover {
           color: var(--hiText);
-          background: rgba(255, 255, 255, 0.05);
-          transform: translateX(2px);
-        }
-        .iconfont {
-          font-size: 20px;
-        }
-        .menu-name {
-          margin-left: 10px;
+          background: rgba(255,255,255,0.04);
         }
       }
       .active {
-        color: var(--activeText);
-        position: relative;
-        background: rgba(125, 226, 209, 0.1);
-        box-shadow: inset 0 0 0 1px rgba(125, 226, 209, 0.16);
-        &::before {
-          content: '';
-          left: 6px;
-          top: 14px;
-          bottom: 14px;
-          width: 3px;
-          background: var(--activeText);
-          position: absolute;
-          border-radius: 2px;
-          font-weight: bold;
+        color: var(--accent);
+        background: rgba(100, 216, 203, 0.08);
+        font-weight: 600;
+        box-shadow: inset 0 0 0 1px rgba(100,216,203,0.12);
+        &:hover { color: var(--accent); background: rgba(100, 216, 203, 0.11); }
+      }
+    }
+  }
+  .bottom-section {
+    padding: 0 10px 14px;
+    .integral-panel {
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      border-radius: 14px;
+      background: rgba(100, 216, 203, 0.05);
+      border: 1px solid rgba(100, 216, 203, 0.08);
+      .integral-label { font-size: 11px; color: var(--mutedText); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+      .integral-value { font-size: 24px; font-weight: 700; color: var(--accent); }
+      .record-btn { margin-top: 6px; font-size: 12px; color: var(--text); cursor: pointer; transition: color var(--transition); &:hover { color: var(--accent); } }
+    }
+    .user-info-panel {
+      .login-btn {
+        cursor: pointer; padding: 11px; text-align: center;
+        border-radius: 50px;
+        background: var(--btnBg);
+        box-shadow: var(--btnShadow);
+        font-weight: 600; font-size: 14px;
+        transition: transform var(--transition), box-shadow var(--transition);
+        &:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(74,168,216,0.28); }
+      }
+      .user-info {
+        display: flex; align-items: center;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 8px 12px;
+        cursor: pointer;
+        transition: border var(--transition);
+        &:hover { border-color: var(--lineStrong); }
+        .user-name {
+          flex: 1; width: 0; margin-left: 10px;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+          color: var(--hiText); font-size: 13px;
         }
-        &:hover {
-          color: var(--activeText);
-        }
       }
     }
   }
-
-  .integral-panel {
-    color: #fff;
-    display: flex;
-    justify-content: space-between;
-    justify-items: center;
-    padding: 12px 16px;
-    margin: 0 12px 8px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.04);
-    .integral {
-      flex: 1;
-    }
-    .record-btn {
-      display: flex;
-      align-items: center;
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--activeText);
-    }
-  }
-
-  .user-info-panel {
-    padding: 12px;
-    .login-btn {
-      cursor: pointer;
-      padding: 10px;
-      text-align: center;
-      border-radius: 50px;
-      background: var(--btnBg);
-      box-shadow: var(--btnShadow);
-    }
-    .user-info {
-      display: flex;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      padding: 7px 10px;
-      cursor: pointer;
-      .user-name {
-        flex: 1;
-        width: 0;
-        margin-left: 10px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        color: var(--activeText);
-      }
-      .icon-logout {
-        margin-left: 5px;
-        color: #fff;
-      }
-    }
-  }
-
-  @media (max-width: 500px) {
-    .bg,
-    .logo {
-      display: none;
-    }
-
-    .left-side {
-      height: calc(100vh - 50px);
-    }
-  }
+}
+@media (max-width: 500px) {
+  .left-side-panel .bg, .left-side-panel .logo { display: none; }
+  .left-side-panel .left-side { height: calc(100vh - 50px); }
 }
 </style>

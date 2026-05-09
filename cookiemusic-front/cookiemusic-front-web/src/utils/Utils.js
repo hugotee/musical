@@ -45,6 +45,13 @@ const seconds2Min = (seconds) => {
     return moment.utc(seconds * 1000).format("mm:ss");
 }
 
+const formatCount = (count) => {
+    if (!count) return '0';
+    if (count >= 10000) return (count / 10000).toFixed(1) + '万';
+    if (count >= 1000) return (count / 1000).toFixed(1) + 'k';
+    return count.toString();
+}
+
 const getLocalResource = (resource) => {
     const path = Object.keys(imageModules).find(path => path.includes(resource));
     return path ? imageModules[path].default : '';
@@ -62,6 +69,7 @@ export default {
     isEmpty,
     formatDate,
     seconds2Min,
+    formatCount,
     getLocalResource,
     convert2Amount
 }

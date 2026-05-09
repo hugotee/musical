@@ -65,9 +65,9 @@ watch(
     height: calc(100vh);
   }
   .right {
-    padding-left: 200px;
+    padding-left: 210px;
     overflow: auto;
-    padding-bottom: 70px;
+    padding-bottom: 72px;
     min-height: 100vh;
   }
 }

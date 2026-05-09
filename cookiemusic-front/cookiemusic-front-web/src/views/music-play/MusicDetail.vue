@@ -3,56 +3,28 @@
     <BackBtn></BackBtn>
     <div class="music-panel">
       <div class="music-cover">
-        <div
-          :class="[
-            'music-cover-bg',
-            musicPlayStore.playing ? 'music-cover-bg-playing' : '',
-          ]"
-        ></div>
-        <div class="cover">
-          <Cover :width="150" :cover="musicInfo.cover" borderRadius="75px">
-          </Cover>
+        <div :class="['cover-bg', musicPlayStore.playing ? 'spinning' : '']"></div>
+        <div class="cover-ring">
+          <Cover :width="180" :cover="musicInfo.cover" borderRadius="50%"></Cover>
         </div>
       </div>
       <div class="music-info">
         <div class="music-title">{{ musicInfo.musicTitle }}</div>
-        <div class="user-info">{{ musicInfo.nickName || "--" }}</div>
+        <div class="user-info">by {{ musicInfo.nickName || '--' }}</div>
         <div class="action-panel">
-          <div
-            :class="[
-              'op-item play-btn iconfont',
-              musicPlayStore.playing ? 'icon-pause' : 'icon-play',
-            ]"
-            @click="playMusic"
-          ></div>
-          <div class="op-item">
-            <ActionGood :data="musicInfo"></ActionGood>
-          </div>
-          <div class="op-item">
-            <ActionShare :data="musicInfo"></ActionShare>
-          </div>
-          <div class="op-item">
-            <el-button type="primary" size="large" @click="createSame"
-              >做同款</el-button
-            >
-          </div>
+          <div :class="['play-btn', musicPlayStore.playing ? 'icon-pause' : 'icon-play', 'iconfont']" @click="playMusic"></div>
+          <div class="action-btn"><ActionGood :data="musicInfo"></ActionGood></div>
+          <div class="action-btn"><ActionShare :data="musicInfo"></ActionShare></div>
+          <el-button type="primary" size="large" round @click="createSame">做同款</el-button>
         </div>
         <div class="lyrics-panel" v-if="musicInfo.musicType === 0">
-          <div class="lyrics-title">歌词：</div>
-          <div
-            :class="[
-              'lyrics-item',
-              musicPlayStore.currentPlayTime >= item.start &&
-              musicPlayStore.currentPlayTime <= item.end
-                ? 'active'
-                : '',
-            ]"
-            v-for="item in musicInfo.lyrics"
-          >
+          <div class="lyrics-title">歌词</div>
+          <div v-for="(item, i) in musicInfo.lyrics" :key="i"
+            :class="['lyrics-item', musicPlayStore.currentPlayTime >= item.start && musicPlayStore.currentPlayTime <= item.end ? 'active' : '']">
             {{ item.text }}
           </div>
         </div>
-        <div v-else class="lyrics-panel">纯音乐，请欣赏。</div>
+        <div v-else class="lyrics-panel"><div class="pure-hint">纯音乐，请欣赏</div></div>
       </div>
     </div>
   </div>
@@ -61,14 +33,7 @@
 <script setup>
 import ActionShare from "@/component/biz/ActionShare.vue";
 import ActionGood from "@/component/biz/ActionGood.vue";
-import {
-  ref,
-  reactive,
-  getCurrentInstance,
-  nextTick,
-  onMounted,
-  watch,
-} from "vue";
+import { ref, getCurrentInstance, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 const { proxy } = getCurrentInstance();
 const router = useRouter();
@@ -80,184 +45,81 @@ import { mitter } from "@/eventbus/eventBus.js";
 const currentMusicId = ref(route.params.musicId);
 const musicInfo = ref({});
 const getMusicInfo = async (autoPlay) => {
-  let result = await proxy.Request({
-    url: proxy.Api.musicDetail,
-    params: {
-      musicId: currentMusicId.value,
-    },
-  });
-  if (!result) {
-    return;
-  }
+  let result = await proxy.Request({ url: proxy.Api.musicDetail, params: { musicId: currentMusicId.value } });
+  if (!result) return;
   if (result.data.musicType === 0) {
-    const lyrics = JSON.parse(result.data.lyrics);
-    result.data.lyrics = lyrics;
+    try { result.data.lyrics = JSON.parse(result.data.lyrics); } catch (e) { result.data.lyrics = []; }
   }
   musicInfo.value = result.data;
-  if (!autoPlay) {
-    return;
-  }
+  if (!autoPlay) return;
   musicPlayStore.play({ ...result.data });
 };
 
 const playMusic = () => {
-  if (musicPlayStore.currentMusic?.musicId == musicInfo.value.musicId) {
-    mitter.emit("togglePlay");
-    return;
-  }
+  if (musicPlayStore.currentMusic?.musicId == musicInfo.value.musicId) { mitter.emit("togglePlay"); return; }
   musicPlayStore.play({ ...musicInfo.value });
 };
+const createSame = () => { router.push(`/idea/${musicInfo.value.creationId}`); };
 
-const createSame = () => {
-  router.push(`/idea/${musicInfo.value.creationId}`);
-};
-
-watch(
-  () => route.params.musicId,
-  async (newVal, oldVal) => {
-    if (!newVal) {
-      return;
-    }
-    currentMusicId.value = newVal;
-    getMusicInfo(true);
-  },
-  { immediate: true, deep: true }
-);
-watch(
-  () => musicPlayStore.currentMusic.musicId,
-  async (newVal, oldVal) => {
-    if (!newVal) {
-      return;
-    }
-    router.push(`/play/${newVal}`);
-  },
-  { immediate: true, deep: true }
-);
+watch(() => route.params.musicId, async (newVal) => {
+  if (!newVal) return; currentMusicId.value = newVal; getMusicInfo(true);
+}, { immediate: true, deep: true });
+watch(() => musicPlayStore.currentMusic.musicId, async (newVal) => {
+  if (!newVal) return; router.push(`/play/${newVal}`);
+}, { immediate: true, deep: true });
 </script>
 
 <style lang="scss" scoped>
 .music-detail-body {
-  padding: 24px;
+  padding: 28px; max-width: 900px;
   .music-panel {
-    display: flex;
-    padding: 24px 24px 90px;
-    margin-top: 16px;
-    background: var(--panelBg);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    box-shadow: var(--softShadow);
+    display: flex; gap: 40px;
+    margin-top: 20px; padding: 40px;
+    background: var(--panelBg); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--softShadow);
     .music-cover {
-      width: 250px;
-      height: 250px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      .music-cover-bg {
-        position: absolute;
-        left: 0px;
-        top: 0px;
-        width: 250px;
-        height: 250px;
-        background: url("../../assets/img/play_cover_bg.png");
-        background-repeat: no-repeat;
+      width: 220px; height: 220px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; position: relative;
+      .cover-bg {
+        position: absolute; inset: 0;
+        border-radius: 50%;
+        background: conic-gradient(from 0deg, var(--accent), #4aa8d8, #f0c36a, var(--accent));
+        opacity: 0.15; filter: blur(30px);
       }
-      .music-cover-bg-playing {
-        animation: rotateBackground 30s linear infinite;
-      }
-      .cover {
-        position: absolute;
-        z-index: 2;
-      }
-      .play-btn {
-        position: absolute;
-        z-index: 3;
-        cursor: pointer;
-      }
+      .cover-bg.spinning { animation: spin 20s linear infinite; }
+      .cover-ring { position: relative; z-index: 2; }
     }
     .music-info {
-      flex: 1;
-      color: #fff;
-      margin-left: 30px;
-      .music-title {
-        font-size: 30px;
-        font-weight: 900;
-      }
-      .user-info {
-        margin-top: 10px;
-        color: var(--text);
-      }
-      .action-panel {
-        margin-top: 10px;
-        display: flex;
-        align-items: center;
-        .op-item {
-          margin-right: 30px;
-          cursor: pointer;
-          width: 40px;
-          height: 40px;
-        }
-        .iconfont {
-          font-size: 25px;
-        }
-        .active {
-          color: var(--accent);
-        }
+      flex: 1; min-width: 0;
+      .music-title { font-size: 28px; font-weight: 800; letter-spacing: -0.01em; color: var(--HiText); }
+      .user-info { margin-top: 8px; color: var(--text); font-size: 14px; }
+      .action-panel { margin-top: 20px; display: flex; align-items: center; gap: 16px;
         .play-btn {
-          font-size: 20px;
-          background: var(--btnBg);
-          border-radius: 50%;
-          color: #061014;
-          width: 40px;
-          height: 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          width: 44px; height: 44px; border-radius: 50%;
+          background: var(--btnBg); box-shadow: var(--btnShadow);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 18px; cursor: pointer; color: #061014;
+          transition: transform var(--transition);
+          &:hover { transform: scale(1.08); }
         }
+        .action-btn { cursor: pointer; }
       }
-      .lyrics-panel {
-        margin-top: 20px;
-        .lyrics-title {
-          font-size: 20px;
-          font-weight: 800;
-        }
-        .lyrics-item {
-          padding: 5px 0px;
-          font-size: 16px;
-          color: var(--text);
-        }
-        .active {
-          color: var(--accentWarm);
-          font-size: 18px;
-        }
-      }
-    }
-  }
-
-  @media (max-width: 500px) {
-    .music-panel {
-      flex-direction: column;
-      text-align: center;
-      .music-cover {
-        margin: 0px auto;
-      }
-      .music-info {
-        margin-left: 0px;
-        margin-top: 5px;
-        .action-panel {
-          justify-content: space-around;
-        }
+      .lyrics-panel { margin-top: 28px;
+        .lyrics-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--HiText); }
+        .lyrics-item { padding: 6px 0; font-size: 15px; color: var(--text); transition: all var(--transition); }
+        .lyrics-item.active { color: var(--accentWarm); font-size: 16px; font-weight: 600; }
+        .pure-hint { color: var(--mutedText); font-size: 15px; font-style: italic; }
       }
     }
   }
 }
 
-@keyframes rotateBackground {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 500px) {
+  .music-detail-body { padding: 16px; .music-panel { flex-direction: column; align-items: center; text-align: center; gap: 24px; padding: 24px;
+    .music-cover { width: 180px; height: 180px; }
+    .music-info .action-panel { justify-content: center; }
+  }}
 }
 </style>
