@@ -127,6 +127,7 @@ public class FileController extends ABaseController {
             }
             randomFile.close();
         } catch (Exception e) {
+            log.error("读取文件失败", e);
         }
     }
 }

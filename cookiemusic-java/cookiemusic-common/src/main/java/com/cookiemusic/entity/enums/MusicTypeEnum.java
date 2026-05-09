@@ -21,7 +21,7 @@ public enum MusicTypeEnum {
     public static MusicTypeEnum getByType(Integer type) {
         Optional<MusicTypeEnum> musicTypeEnum = Arrays.stream(MusicTypeEnum.values())
                 .filter(value -> value.getType().equals(type)).findFirst();
-        return musicTypeEnum == null ? null : musicTypeEnum.get();
+        return musicTypeEnum.orElse(null);
     }
 
     public Integer getType() {

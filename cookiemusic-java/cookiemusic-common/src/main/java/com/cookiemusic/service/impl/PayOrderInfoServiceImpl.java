@@ -223,7 +223,7 @@ public class PayOrderInfoServiceImpl implements PayOrderInfoService {
                     for (String orderId : queueOrderList) {
                         if (redisComponent.removeTimeOutOrder(orderId) > 0) {
                             PayOrderInfo payOrderInfo = payOrderInfoMapper.selectByOrderId(orderId);
-                            if (PayOrderStatusEnum.HAVE_PAY.getStatus().equals(payOrderInfo.getStatus())) {
+                            if (payOrderInfo == null || PayOrderStatusEnum.HAVE_PAY.getStatus().equals(payOrderInfo.getStatus())) {
                                 continue;
                             }
                             PayOrderInfo updateInfo = new PayOrderInfo();
@@ -315,6 +315,7 @@ public class PayOrderInfoServiceImpl implements PayOrderInfoService {
         }
         //已使用
         if (PayCodeStatusEnum.USED.getStatus().equals(payCodeInfo.getStatus())
+                || payCodeInfo.getCreateTime() == null
                 || System.currentTimeMillis() - payCodeInfo.getCreateTime().getTime() > 1000 * 60 * 30) {
             throw new BusinessException("支付码不正确或者已过期或者已使用");
         }

@@ -187,7 +187,17 @@ public class MusicCreationServiceImpl implements MusicCreationService {
             throw new BusinessException("系统配置错误，请联系管理员");
         }
         SysDict sysDict = dictInfo.get();
-        Integer integralCost = Integer.parseInt(sysDict.getDictValue());
+        String dictValue = sysDict.getDictValue();
+        if (dictValue == null || dictValue.isBlank()) {
+            throw new BusinessException("系统配置错误，请联系管理员");
+        }
+        Integer integralCost;
+        try {
+            integralCost = Integer.parseInt(dictValue);
+        } catch (NumberFormatException e) {
+            log.error("积分配置值无法解析: {}", dictValue, e);
+            throw new BusinessException("系统配置错误，请联系管理员");
+        }
 
         String creationId = StringTools.getRandomString(Constants.LENGTH_15);
 
@@ -259,7 +269,7 @@ public class MusicCreationServiceImpl implements MusicCreationService {
                                             MusicSettingDTO musicSettingDTO, Date curDate) {
         MusicCreationResultDTO genResult = callMusicGen(prompt, musicCreation.getMusicType(),
                 musicSettingDTO.getMusicGener(), musicSettingDTO.getMusicEmotion(), musicSettingDTO.getMusicSex());
-        if (!genResult.getCreateSuccess()) {
+        if (genResult.getCreateSuccess() == null || !genResult.getCreateSuccess()) {
             throw new BusinessException("AI音乐生成失败，请稍后重试");
         }
 

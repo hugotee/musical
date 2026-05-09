@@ -116,10 +116,13 @@ public class OKHttpUtils {
 
     public static void download(String url, String filePath) {
         ResponseBody responseBody = null;
-        String responseStr = null;
         try {
-            OkHttpClient.Builder clientBuilder = getClientBuilder();
-            OkHttpClient client = clientBuilder.build();
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .followRedirects(false)
+                    .retryOnConnectionFailure(false)
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .readTimeout(120, TimeUnit.SECONDS)
+                    .build();
 
             Request.Builder requestBuilder = getRequestBuilder(null);
             Request request = requestBuilder.url(url).build();
@@ -146,7 +149,7 @@ public class OKHttpUtils {
             if (responseBody != null) {
                 responseBody.close();
             }
-            log.info("请求地址:{},参数:{},返回:{}", url, responseStr, responseStr);
+            log.info("下载文件 url:{}, path:{}", url, filePath);
         }
     }
 }

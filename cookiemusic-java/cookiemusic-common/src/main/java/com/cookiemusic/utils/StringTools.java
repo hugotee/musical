@@ -72,15 +72,18 @@ public class StringTools {
     }
 
     public static String getFileSuffix(String fileName) {
-        String suffix = fileName.substring(fileName.lastIndexOf("."));
-        return suffix;
+        int index = fileName.lastIndexOf(".");
+        if (index < 0) {
+            return "";
+        }
+        return fileName.substring(index);
     }
 
     public static boolean pathIsOk(String path) {
         if (StringTools.isEmpty(path)) {
-            return true;
+            return false;
         }
-        if (path.contains("../") || path.contains("..\\")) {
+        if (path.contains("../") || path.contains("..\\") || path.equals("..") || path.endsWith("/..")) {
             return false;
         }
         return true;
