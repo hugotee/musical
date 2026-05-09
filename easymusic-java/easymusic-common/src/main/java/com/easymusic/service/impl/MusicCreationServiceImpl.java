@@ -2,10 +2,12 @@ package com.easymusic.service.impl;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import com.easymusic.api.MusicCreateApi;
 import com.easymusic.entity.config.AppConfig;
 import com.easymusic.entity.constants.Constants;
 import com.easymusic.entity.dto.MusicCreationResultDTO;
 import com.easymusic.entity.dto.MusicSettingDTO;
+import com.easymusic.entity.dto.MusicTaskDTO;
 import com.easymusic.entity.enums.*;
 import com.easymusic.entity.po.MusicCreation;
 import com.easymusic.entity.po.MusicInfo;
@@ -20,6 +22,7 @@ import com.easymusic.mappers.MusicInfoMapper;
 import com.easymusic.redis.RedisComponent;
 import com.easymusic.service.MusicCreationService;
 import com.easymusic.service.UserIntegralRecordService;
+import com.easymusic.spring.SpringContext;
 import com.easymusic.utils.JsonUtils;
 import com.easymusic.utils.OKHttpUtils;
 import com.easymusic.utils.StringTools;
@@ -173,7 +176,7 @@ public class MusicCreationServiceImpl implements MusicCreationService {
         if (null == musicTypeEnum) {
             throw new BusinessException(ResponseCodeEnum.CODE_600);
         }
-        getModelInfo(musicTypeEnum, musicCreation.getModel());
+        ModelInfo modelInfo = getModelInfo(musicTypeEnum, musicCreation.getModel());
 
         List<SysDict> sysDictSubList = redisComponent.getDictSubList(musicTypeEnum.getDictCode());
         if (sysDictSubList == null || sysDictSubList.isEmpty()) {
@@ -219,36 +222,13 @@ public class MusicCreationServiceImpl implements MusicCreationService {
                 log.error("获取音乐设置信息失败", e);
             }
         }
-        // 调用 MusicGen AI 服务生成音乐
-        MusicCreationResultDTO genResult = callMusicGen(prompt, musicCreation.getMusicType(),
-                musicSettingDTO.getMusicGener(), musicSettingDTO.getMusicEmotion(), musicSettingDTO.getMusicSex());
-        if (!genResult.getCreateSuccess()) {
-            throw new BusinessException("AI音乐生成失败，请稍后重试");
+        if (MusicTypeEnum.PURE.getType().equals(musicCreation.getMusicType())) {
+            // 纯音乐: 本地 MusicGen 同步生成
+            return createWithMusicGen(musicCreation, prompt, musicSettingDTO, curDate);
+        } else {
+            // 歌曲: 天谱乐 API 异步生成（带人声）
+            return createWithTianpuyue(musicCreation, prompt, modelInfo, curDate);
         }
-
-        String musicId = StringTools.getRandomNumber(Constants.LENGTH_12);
-        String localPath = downloadMusicGenAudio(genResult, musicId);
-
-        MusicInfo musicInfo = new MusicInfo();
-        musicInfo.setMusicId(musicId);
-        musicInfo.setUserId(musicCreation.getUserId());
-        musicInfo.setCreationId(musicCreation.getCreationId());
-        musicInfo.setGoodCount(0);
-        musicInfo.setPlayCount(0);
-        musicInfo.setCreateTime(curDate);
-        musicInfo.setCommendType(CommendTypeEnum.NOT_COMMEND.getType());
-        musicInfo.setMusicStatus(MusicStatusEnum.CREATED.getStatus());
-        musicInfo.setTaskId(genResult.getTaskId());
-        musicInfo.setMusicType(musicCreation.getMusicType());
-        musicInfo.setMusicTitle(genResult.getTitle() != null ? genResult.getTitle() : prompt.substring(0, Math.min(30, prompt.length())));
-        musicInfo.setDuration(genResult.getDuration());
-        musicInfo.setAudioPath(localPath);
-        musicInfo.setLyrics("[]");
-        musicInfoMapper.insert(musicInfo);
-
-        List<String> musicIdList = new ArrayList<>();
-        musicIdList.add(musicId);
-        return musicIdList;
     }
 
     record ModelInfo(String model, String apiCode) {
@@ -272,6 +252,86 @@ public class MusicCreationServiceImpl implements MusicCreationService {
         } else {
             throw new BusinessException(ResponseCodeEnum.CODE_600);
         }
+    }
+
+    /** 纯音乐: 本地 MusicGen Small 同步生成 */
+    private List<String> createWithMusicGen(MusicCreation musicCreation, String prompt,
+                                            MusicSettingDTO musicSettingDTO, Date curDate) {
+        MusicCreationResultDTO genResult = callMusicGen(prompt, musicCreation.getMusicType(),
+                musicSettingDTO.getMusicGener(), musicSettingDTO.getMusicEmotion(), musicSettingDTO.getMusicSex());
+        if (!genResult.getCreateSuccess()) {
+            throw new BusinessException("AI音乐生成失败，请稍后重试");
+        }
+
+        String musicId = StringTools.getRandomNumber(Constants.LENGTH_12);
+        String localPath = downloadMusicGenAudio(genResult, musicId);
+
+        MusicInfo musicInfo = new MusicInfo();
+        musicInfo.setMusicId(musicId);
+        musicInfo.setUserId(musicCreation.getUserId());
+        musicInfo.setCreationId(musicCreation.getCreationId());
+        musicInfo.setGoodCount(0);
+        musicInfo.setPlayCount(0);
+        musicInfo.setCreateTime(curDate);
+        musicInfo.setCommendType(CommendTypeEnum.NOT_COMMEND.getType());
+        musicInfo.setMusicStatus(MusicStatusEnum.CREATED.getStatus());
+        musicInfo.setTaskId(genResult.getTaskId());
+        musicInfo.setMusicType(musicCreation.getMusicType());
+        musicInfo.setMusicTitle(genResult.getTitle() != null ? genResult.getTitle()
+                : prompt.substring(0, Math.min(30, prompt.length())));
+        musicInfo.setDuration(genResult.getDuration());
+        musicInfo.setAudioPath(localPath);
+        musicInfo.setLyrics("[]");
+        musicInfoMapper.insert(musicInfo);
+
+        List<String> musicIdList = new ArrayList<>();
+        musicIdList.add(musicId);
+        return musicIdList;
+    }
+
+    /** 歌曲: 天谱乐 API 异步生成（支持人声） */
+    private List<String> createWithTianpuyue(MusicCreation musicCreation, String prompt,
+                                             ModelInfo modelInfo, Date curDate) {
+        MusicCreateApi musicCreateApi = (MusicCreateApi) SpringContext.getBean(modelInfo.apiCode());
+        List<String> itemIds;
+        if (MusicTypeEnum.MUSIC.getType().equals(musicCreation.getMusicType())) {
+            itemIds = musicCreateApi.createMusic(modelInfo.model(), prompt, musicCreation.getLyrics());
+        } else {
+            itemIds = musicCreateApi.createPureMusic(modelInfo.model(), prompt);
+        }
+        if (itemIds == null || itemIds.isEmpty()) {
+            throw new BusinessException("音乐创作失败");
+        }
+
+        List<MusicInfo> musicInfoList = new ArrayList<>();
+        List<String> musicIdList = new ArrayList<>();
+        for (String item : itemIds) {
+            MusicInfo musicInfo = new MusicInfo();
+            String musicId = StringTools.getRandomNumber(Constants.LENGTH_12);
+            musicInfo.setMusicId(musicId);
+            musicInfo.setUserId(musicCreation.getUserId());
+            musicInfo.setCreationId(musicCreation.getCreationId());
+            musicInfo.setGoodCount(0);
+            musicInfo.setPlayCount(0);
+            musicInfo.setCreateTime(curDate);
+            musicInfo.setCommendType(CommendTypeEnum.NOT_COMMEND.getType());
+            musicInfo.setMusicStatus(MusicStatusEnum.CREATING.getStatus());
+            musicInfo.setTaskId(item);
+            musicInfo.setMusicType(musicCreation.getMusicType());
+            musicInfoList.add(musicInfo);
+
+            if (appConfig.getAutoCheckMusic()) {
+                MusicTaskDTO musicTaskDto = new MusicTaskDTO();
+                musicTaskDto.setApiCode(modelInfo.apiCode());
+                musicTaskDto.setMusicId(musicId);
+                musicTaskDto.setTaskId(item);
+                musicTaskDto.setMusicType(musicCreation.getMusicType());
+                redisComponent.addMusicCreateTask(musicTaskDto);
+            }
+            musicIdList.add(musicId);
+        }
+        musicInfoMapper.insertBatch(musicInfoList);
+        return musicIdList;
     }
 
     private MusicCreationResultDTO callMusicGen(String prompt, Integer musicType,
