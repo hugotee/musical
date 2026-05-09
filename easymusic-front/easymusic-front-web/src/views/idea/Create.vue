@@ -4,6 +4,9 @@
       <el-tab-pane label="歌曲" :name="0"></el-tab-pane>
       <el-tab-pane label="纯音乐" :name="1"></el-tab-pane>
     </el-tabs>
+    <div class="cost-hint">
+      本次创作消耗 <span class="cost-num">{{ currentCost }}</span> 积分
+    </div>
   </div>
   <div class="create-form">
     <el-form :model="formData" :rules="rules" ref="formDataRef" label-width="80px" @submit.prevent>
@@ -76,6 +79,7 @@ import {
   nextTick,
   onMounted,
   onUnmounted,
+  computed,
 } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 const { proxy } = getCurrentInstance()
@@ -156,6 +160,16 @@ const loadSysSetting = async () => {
   }
   getPrompt()
 }
+
+const currentCost = computed(() => {
+  const models =
+    formData.value.musicType == 0
+      ? sysSetting.value[SYS_SETTING_KEY.music_model.key]
+      : sysSetting.value[SYS_SETTING_KEY.music_model_pure.key]
+  if (!models) return 0
+  const model = models.find((m) => m.dictCode === 'V3')
+  return model ? model.dictValue : 0
+})
 
 const formData = ref({
   modeType: 0,
@@ -249,6 +263,17 @@ onMounted(() => {
     &::after {
       background: #2c2c2c;
     }
+  }
+}
+.cost-hint {
+  text-align: center;
+  font-size: 13px;
+  color: #b7c2db;
+  margin: 6px 0 12px 0;
+  .cost-num {
+    color: #ffd700;
+    font-weight: bold;
+    font-size: 15px;
   }
 }
 .create-form {
