@@ -13,7 +13,7 @@ mybatis:
     map-underscore-to-camel-case: true
 #项目目录
 project:
-  folder: /Users/hugo/Documents/NEFU/final/webser/web_app/cookiemusic/
+  folder: /Users/hugo/Documents/NEFU/final/webser/web_app/easymusic/
   #日志级别配置
 log:
   root:
