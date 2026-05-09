@@ -14,6 +14,17 @@
           { label: '简单模式', value: 0 },
           { label: '高级模式', value: 1 },
         ]" v-model="formData.modeType"></Switch>
+      <div class="model-panel">
+        <div class="part-title">模型</div>
+        <TabSelect
+          :multiple="false"
+          :data="currentModelOptions"
+          label-key="modelLabel"
+          value-key="dictCode"
+          v-model="formData.model"
+        ></TabSelect>
+        <div class="model-desc" v-if="currentModelDesc">{{ currentModelDesc }}</div>
+      </div>
       <!--input输入-->
       <template v-if="formData.modeType == 0">
         <div class="input-panel">
@@ -80,6 +91,7 @@ import {
   onMounted,
   onUnmounted,
   computed,
+  watch,
 } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 const { proxy } = getCurrentInstance()
@@ -140,6 +152,38 @@ const getPrompt = () => {
 }
 
 const sysSetting = ref({})
+
+const getModelDictKey = () => {
+  return formData.value.musicType == 0
+    ? SYS_SETTING_KEY.music_model.key
+    : SYS_SETTING_KEY.music_model_pure.key
+}
+
+const currentModelOptions = computed(() => {
+  const models = sysSetting.value[getModelDictKey()] || []
+  return models.map((item) => {
+    return {
+      ...item,
+      modelLabel: `${item.dictCode} · ${item.dictValue}积分`,
+    }
+  })
+})
+
+const currentModelInfo = computed(() => {
+  return currentModelOptions.value.find((item) => item.dictCode === formData.value.model)
+})
+
+const currentModelDesc = computed(() => currentModelInfo.value?.dictDesc || "")
+
+const syncModelSelection = () => {
+  if (currentModelOptions.value.length === 0) {
+    return
+  }
+  if (!currentModelInfo.value) {
+    formData.value.model = currentModelOptions.value[0].dictCode
+  }
+}
+
 const loadSysSetting = async () => {
   let result = await proxy.Request({
     url: proxy.Api.loadSysDict,
@@ -155,6 +199,7 @@ const loadSysSetting = async () => {
     }
   }
   sysSetting.value = result.data
+  syncModelSelection()
   if (route.params.creationId) {
     return
   }
@@ -162,13 +207,7 @@ const loadSysSetting = async () => {
 }
 
 const currentCost = computed(() => {
-  const models =
-    formData.value.musicType == 0
-      ? sysSetting.value[SYS_SETTING_KEY.music_model.key]
-      : sysSetting.value[SYS_SETTING_KEY.music_model_pure.key]
-  if (!models) return 0
-  const model = models.find((m) => m.dictCode === 'V3')
-  return model ? model.dictValue : 0
+  return currentModelInfo.value ? currentModelInfo.value.dictValue : 0
 })
 
 const formData = ref({
@@ -235,7 +274,15 @@ const getCreation = async () => {
     result.data = { ...result.data, ...JSON.parse(result.data.settings) }
   }
   formData.value = result.data
+  syncModelSelection()
 }
+
+watch(
+  () => formData.value.musicType,
+  () => {
+    syncModelSelection()
+  }
+)
 
 onMounted(() => {
   loadSysSetting()
@@ -351,18 +398,13 @@ onMounted(() => {
     line-height: 40px;
   }
 
-  .model-select {
-    width: 100%;
-    :deep(.el-radio-button) {
-      width: 50%;
-      .el-radio-button__inner {
-        width: 100%;
-      }
-    }
-    .model-tips {
-      margin-top: 5px;
+  .model-panel {
+    margin-bottom: 10px;
+    .model-desc {
+      margin-top: 2px;
       font-size: 13px;
       color: var(--text);
+      line-height: 20px;
     }
   }
 

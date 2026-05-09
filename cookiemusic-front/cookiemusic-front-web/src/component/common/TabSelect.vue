@@ -2,49 +2,77 @@
   <div class="tab-select">
     <div
       v-for="item in data"
-      :class="['tab', prpos.modelValue?.includes(item) ? 'selected' : '']"
+      :key="getItemValue(item)"
+      :class="['tab', isSelected(item) ? 'selected' : '']"
       @click="selectTab(item)"
     >
-      {{ item }}
+      {{ getItemLabel(item) }}
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, getCurrentInstance, nextTick } from "vue";
-import { useRouter, useRoute } from "vue-router";
-const { proxy } = getCurrentInstance();
-const router = useRouter();
-const route = useRoute();
-const prpos = defineProps({
+const props = defineProps({
   data: {
     type: Array,
-    default: [],
+    default: () => [],
   },
   modelValue: {
     type: [Array, String],
-    default: [],
+    default: () => [],
   },
   multiple: {
     type: Boolean,
     default: true,
   },
+  labelKey: {
+    type: String,
+    default: "",
+  },
+  valueKey: {
+    type: String,
+    default: "",
+  },
 });
 
 const emit = defineEmits(["update:modelValue"]);
+
+const isObjectItem = (item) => item !== null && typeof item === "object";
+
+const getItemValue = (item) => {
+  return props.valueKey && isObjectItem(item) ? item[props.valueKey] : item;
+};
+
+const getItemLabel = (item) => {
+  if (props.labelKey && isObjectItem(item) && item[props.labelKey]) {
+    return item[props.labelKey];
+  }
+  return getItemValue(item);
+};
+
+const isSelected = (item) => {
+  const value = getItemValue(item);
+  if (props.multiple) {
+    const selectedValues = Array.isArray(props.modelValue) ? props.modelValue : [];
+    return selectedValues.includes(value);
+  }
+  return props.modelValue === value;
+};
+
 const selectTab = (item) => {
-  if (prpos.multiple) {
-    const newValue = [...(proxy.modelValue || [])];
-    const index = newValue.indexOf(item);
+  const value = getItemValue(item);
+  if (props.multiple) {
+    const newValue = Array.isArray(props.modelValue) ? [...props.modelValue] : [];
+    const index = newValue.indexOf(value);
     // 切换选中状态
     if (index > -1) {
       newValue.splice(index, 1);
     } else {
-      newValue.push(item);
+      newValue.push(value);
     }
     emit("update:modelValue", newValue);
   } else {
-    emit("update:modelValue", item);
+    emit("update:modelValue", value);
   }
 };
 </script>
