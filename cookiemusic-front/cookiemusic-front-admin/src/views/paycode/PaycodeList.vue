@@ -39,7 +39,8 @@
     <!--状态-->
     <template #status="{ index, row }">
       <span v-if="row.status == 1" :style="{ color: '#67c23a' }">已使用</span>
-      <span v-if="row.status == 0" :style="{ color: '#f56c6c' }">待使用</span>
+      <span v-else-if="isExpired(row)" :style="{ color: '#909399' }">已过期</span>
+      <span v-else :style="{ color: '#f56c6c' }">待使用</span>
     </template>
 
     <template #op="{ index, row }">
@@ -124,6 +125,14 @@ const loadDataList = async () => {
 const payCodeRef = ref();
 const newPayCode = () => {
   payCodeRef.value.show();
+};
+
+const isExpired = (row) => {
+  if (row.status != 0 || !row.createTime) {
+    return false;
+  }
+  const createTime = new Date(row.createTime.replace(/-/g, "/")).getTime();
+  return Date.now() - createTime > 30 * 60 * 1000;
 };
 
 //禁用用户

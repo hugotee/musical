@@ -45,7 +45,10 @@ public class PayCodeInfoController extends ABaseController {
     public ResponseVO createCode(@NotNull BigDecimal amount) {
         PayCodeInfo bean = new PayCodeInfo();
         bean.setAmount(amount);
-        String payCode = StringTools.getRandomNumber(Constants.LENGTH_8);
+        String payCode;
+        do {
+            payCode = StringTools.getRandomNumber(Constants.LENGTH_8);
+        } while (payCodeInfoService.getPayCodeInfoByPayCode(payCode) != null);
         bean.setPayCode(payCode);
         bean.setCreateTime(new Date());
         bean.setStatus(PayCodeStatusEnum.NO_USE.getStatus());

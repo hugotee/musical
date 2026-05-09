@@ -31,7 +31,7 @@
           付款码支付
         </div>
         <div :class="['mode-tab', { active: payMode === 'demo' }]" @click="payMode = 'demo'">
-          演示模式
+          人工转账
         </div>
       </div>
 
@@ -40,7 +40,7 @@
         <div class="paycode-panel">
           <div class="paycode-title">输入付款码</div>
           <div class="paycode-desc">
-            请联系管理员获取付款码，每个付款码只能使用一次
+            请联系管理员获取 8 位付款码。付款码有效期 30 分钟，且只能使用一次
           </div>
           <div class="paycode-form">
             <el-form :model="payCodeForm" :rules="payCodeRules" ref="payCodeFormRef" @submit.prevent>
@@ -80,13 +80,13 @@
         </div>
       </template>
 
-      <!-- 演示模式 -->
+      <!-- 人工转账说明 -->
       <template v-else>
         <div class="pseudo-pay-panel">
           <div class="pseudo-title">扫码联系管理员</div>
           <div class="pseudo-desc">
-            演示模式仅供展示支付流程，不自动到账。
-            如需真实充值，请切换到"付款码支付"。
+            人工转账仅用于展示线下确认流程，不自动到账。
+            如需即时充值，请切换到"付款码支付"。
           </div>
           <div class="qrcode-wrap">
             <img :src="qrcodeUrl" alt="收款码" />
@@ -177,9 +177,9 @@ const submitPayCode = async () => {
   closePay()
 }
 
-// ============ 演示模式 ============
+// ============ 人工转账说明 ============
 const confirmPseudoPay = () => {
-  proxy.Message.success('请联系管理员人工加积分')
+  proxy.Message.success('请联系管理员确认后发放付款码或人工加积分')
   closePay()
 }
 

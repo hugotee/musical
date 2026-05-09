@@ -32,6 +32,9 @@
             >复制</el-button
           >
         </el-form-item>
+        <div class="paycode-tip">
+          付款码有效期为 30 分钟，且只能使用一次。生成后请及时发给用户。
+        </div>
       </el-form>
     </Dialog>
   </div>
@@ -123,4 +126,10 @@ const copy = async () => {
 </script>
 
 <style lang="scss" scoped>
+.paycode-tip {
+  color: #909399;
+  font-size: 12px;
+  line-height: 20px;
+  padding-left: 80px;
+}
 </style>

@@ -2,7 +2,7 @@ package com.cookiemusic.entity.enums;
 
 
 public enum PayTypeEnum {
-    LAOLUO("laoluo", "使用老罗封装的接口"),
+    PROXY("proxy", "使用第三方代理接口"),
     WECHAT("wechat", "使用微信官方");
 
     private String payType;

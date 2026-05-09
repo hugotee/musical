@@ -53,7 +53,7 @@ public class GlobalOperationAspect {
         if (System.getProperty("dev") != null) {
             tokenUserInfoDto = new TokenUserInfoDTO();
             tokenUserInfoDto.setUserId("1000000");
-            tokenUserInfoDto.setNickName("程序员老罗");
+            tokenUserInfoDto.setNickName("测试用户");
             tokenUserInfoDto.setToken(token);
             redisComponent.saveTokenUserInfoDto(tokenUserInfoDto);
         }

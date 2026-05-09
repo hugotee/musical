@@ -7,7 +7,7 @@ import java.util.Optional;
 public enum PayOrderTypeEnum {
 
     PAY_CODE(0, "", "付款码支付"),
-    PAY_WECHAT(1, "payChannel4Wechat", "微信支付");
+    PAY_WECHAT(1, "payChannel4Wechat", "第三方支付预留");
 
 
     private Integer type;

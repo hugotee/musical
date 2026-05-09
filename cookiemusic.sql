@@ -193,15 +193,15 @@ CREATE TABLE `pay_order_info`  (
 -- ----------------------------
 -- Records of pay_order_info
 -- ----------------------------
-INSERT INTO `pay_order_info` VALUES ('20250831144659WBJBW1XQV4E7QB', '100000000000', '15631', '体验卡', 1.20, NULL, '2025-08-31 06:47:01', NULL, -1, 120, 'weixin://wxpay/bizpayurl?pr=wssC6hpz1', 1);
-INSERT INTO `pay_order_info` VALUES ('20250831151410PUOSEC3RIFZK9P', '100000000000', '15631', '体验卡', 1.20, '4200002780202508311308070808', '2025-08-31 07:14:12', '2025-08-31 07:14:27', 1, 120, 'weixin://wxpay/bizpayurl?pr=L8pufVlz1', 1);
-INSERT INTO `pay_order_info` VALUES ('20250831202711A90PSC3B0HBPTE', '243091801061', '15631', '体验卡', 1.20, NULL, '2025-08-31 20:27:12', NULL, -1, 120, 'weixin://wxpay/bizpayurl?pr=I7n341lz3', 1);
-INSERT INTO `pay_order_info` VALUES ('20250831202728HAX945NLTLQGI9', '243091801061', '15631', '体验卡', 1.20, '4200002733202508315975893088', '2025-08-31 20:27:29', '2025-08-31 20:27:38', 1, 120, 'weixin://wxpay/bizpayurl?pr=xHZYfq8z3', 1);
-INSERT INTO `pay_order_info` VALUES ('20250901114004AXRSLXNZJB8EFU', '100000000000', '15631', '体验卡', 1.20, NULL, '2025-09-01 11:40:06', NULL, -1, 120, 'weixin://wxpay/bizpayurl?pr=TL3bmAuz1', 1);
-INSERT INTO `pay_order_info` VALUES ('20250901200045MKGPFAGQFU6KKK', '363912285032', '15631', '体验卡', 1.20, NULL, '2025-09-01 20:00:46', NULL, -1, 120, 'weixin://wxpay/bizpayurl?pr=IykEsMUz3', 1);
-INSERT INTO `pay_order_info` VALUES ('20250907100213OASMAXRFXFHW4R', '100000000000', '15631', '体验卡', 1.20, '4200002803202509074906590842', '2025-09-07 10:02:14', '2025-09-07 10:02:25', 1, 120, 'weixin://wxpay/bizpayurl?pr=vTysfjEz3', 1);
+INSERT INTO `pay_order_info` VALUES ('20250831144659WBJBW1XQV4E7QB', '100000000000', '15631', '体验卡', 1.20, NULL, '2025-08-31 06:47:01', NULL, -1, 120, NULL, 0);
+INSERT INTO `pay_order_info` VALUES ('20250831151410PUOSEC3RIFZK9P', '100000000000', '15631', '体验卡', 1.20, NULL, '2025-08-31 07:14:12', '2025-08-31 07:14:27', 1, 120, NULL, 0);
+INSERT INTO `pay_order_info` VALUES ('20250831202711A90PSC3B0HBPTE', '243091801061', '15631', '体验卡', 1.20, NULL, '2025-08-31 20:27:12', NULL, -1, 120, NULL, 0);
+INSERT INTO `pay_order_info` VALUES ('20250831202728HAX945NLTLQGI9', '243091801061', '15631', '体验卡', 1.20, NULL, '2025-08-31 20:27:29', '2025-08-31 20:27:38', 1, 120, NULL, 0);
+INSERT INTO `pay_order_info` VALUES ('20250901114004AXRSLXNZJB8EFU', '100000000000', '15631', '体验卡', 1.20, NULL, '2025-09-01 11:40:06', NULL, -1, 120, NULL, 0);
+INSERT INTO `pay_order_info` VALUES ('20250901200045MKGPFAGQFU6KKK', '363912285032', '15631', '体验卡', 1.20, NULL, '2025-09-01 20:00:46', NULL, -1, 120, NULL, 0);
+INSERT INTO `pay_order_info` VALUES ('20250907100213OASMAXRFXFHW4R', '100000000000', '15631', '体验卡', 1.20, NULL, '2025-09-07 10:02:14', '2025-09-07 10:02:25', 1, 120, NULL, 0);
 INSERT INTO `pay_order_info` VALUES ('20250907100402JDYBZFGH841FXO', '100000000000', '15631', '体验卡', 1.20, NULL, '2025-09-07 10:04:02', NULL, 1, 120, NULL, 0);
-INSERT INTO `pay_order_info` VALUES ('20250907102544IZ3VYWVMSPMO1B', '100000000000', '15631', '体验卡', 1.20, '4200002872202509070839941281', '2025-09-07 10:25:45', '2025-09-07 10:25:55', 1, 120, 'weixin://wxpay/bizpayurl?pr=R9VT5vCz3', 1);
+INSERT INTO `pay_order_info` VALUES ('20250907102544IZ3VYWVMSPMO1B', '100000000000', '15631', '体验卡', 1.20, NULL, '2025-09-07 10:25:45', '2025-09-07 10:25:55', 1, 120, NULL, 0);
 INSERT INTO `pay_order_info` VALUES ('20250907102641THSO4XJYRPR79P', '100000000000', '15631', '体验卡', 1.20, NULL, '2025-09-07 10:26:42', NULL, 1, 120, NULL, 0);
 
 -- ----------------------------
@@ -248,8 +248,8 @@ INSERT INTO `sys_dict` VALUES (17, 'music_model', '0', '', '音乐模型', NULL)
 INSERT INTO `sys_dict` VALUES (18, 'V3', 'music_model', '30', '生成最长120s的音乐(30积分/首)', 1);
 INSERT INTO `sys_dict` VALUES (19, 'V3.5', 'music_model', '40', '生成最长270s的音乐(40积分/首)', 2);
 INSERT INTO `sys_dict` VALUES (20, 'music_model_pure', '0', NULL, '纯音乐模型', NULL);
-INSERT INTO `sys_dict` VALUES (21, 'V3', 'music_model_pure', '25', '生成最长120s的纯音乐(25积分/首)', 1);
-INSERT INTO `sys_dict` VALUES (22, 'V3.5', 'music_model_pure', '35', '生成最长270s的纯音乐(35积分/首)', 2);
+INSERT INTO `sys_dict` VALUES (21, 'V3', 'music_model_pure', '25', 'MusicGen Small 纯音乐生成(25积分/首)', 1);
+INSERT INTO `sys_dict` VALUES (22, 'V3.5', 'music_model_pure', '35', 'MusicGen Small 扩展配置(35积分/首)', 2);
 INSERT INTO `sys_dict` VALUES (23, 'music_grenre', '0', NULL, '曲风', 0);
 INSERT INTO `sys_dict` VALUES (24, '流行', 'music_grenre', '', '', 1);
 INSERT INTO `sys_dict` VALUES (25, '摇滚', 'music_grenre', '', '', 2);
@@ -348,7 +348,7 @@ CREATE TABLE `user_info`  (
 -- ----------------------------
 -- Records of user_info
 -- ----------------------------
-INSERT INTO `user_info` VALUES ('100000000000', 'test@qq.com', '程序员老罗', 'avatar/100000000000.png&1756622795386', '47ec2dd791e31e2ef2076caf64ed9b3d', 1, '2025-08-31 06:44:57', '2025-09-07 09:45:33', 480);
+INSERT INTO `user_info` VALUES ('100000000000', 'test@qq.com', '测试用户', 'avatar/100000000000.png&1756622795386', '47ec2dd791e31e2ef2076caf64ed9b3d', 1, '2025-08-31 06:44:57', '2025-09-07 09:45:33', 480);
 INSERT INTO `user_info` VALUES ('243091801061', 'test02@qq.com', '测试账号', 'avatar/243091801061.png', '47ec2dd791e31e2ef2076caf64ed9b3d', 1, '2025-08-31 20:26:44', '2025-08-31 20:26:58', 90);
 
 -- ----------------------------

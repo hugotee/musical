@@ -8,3 +8,7 @@
 **/.env
 **/.env.*
 !**/.env.example
+**/__pycache__/
+c:/
+log.path_IS_UNDEFINED/
+cookiemusic-musicgen/output/

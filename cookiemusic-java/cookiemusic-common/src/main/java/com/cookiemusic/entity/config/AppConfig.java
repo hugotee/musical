@@ -32,7 +32,7 @@ public class AppConfig {
     private String webDomain;
 
 
-    //微信支付 appid
+    //第三方支付应用ID，当前仅作为微信渠道预留配置
     @Value("${pay.wechat.appid:}")
     private String payWechatAppId;
 
@@ -40,26 +40,26 @@ public class AppConfig {
     @Value("${pay.wechat.mchid:}")
     private String payWechatMchid;
 
-    //整数
+    //第三方支付证书序列号
     @Value("${pay.wechat.serialNo:}")
     private String payWechatSerialNo;
 
-    //api密钥
+    //第三方支付证书文件路径
     @Value("${pay.wechat.apiclientKeypath:}")
     private String payWechataApiclientKeyPath;
 
-    // v3key密钥
+    //第三方支付签名密钥
     @Value("${pay.wechat.apiV3key:}")
     private String payWechatApiV3Key;
 
-    //支付域名
+    //第三方支付网关域名
     @Value("${pay.payDomain:}")
     private String payDomain;
 
     @Value("${pay.payType:wechat}")
     private String payType;
 
-    //课程ID
+    //第三方支付授权订单号
     @Value("${pay.courseOrderId:}")
     private String courseOrderId;
 

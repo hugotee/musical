@@ -22,7 +22,7 @@ log:
 admin:
   account: admin
   password: admin123
-# MusicGen AI音乐生成服务地址
+# MusicGen AI音乐生成服务地址，后台目前仅保留配置，不直接调用生成接口
 musicgen:
   server:
     url: http://localhost:8092

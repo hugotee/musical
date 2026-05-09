@@ -353,7 +353,7 @@ public class PayOrderInfoServiceImpl implements PayOrderInfoService {
         payCodeInfoQuery.setStatus(PayCodeStatusEnum.NO_USE.getStatus());
         Integer updateCount = payCodeInfoMapper.updateByParam(updateInfo, payCodeInfoQuery);
         if (updateCount == 0) {
-            throw new BusinessException("支付码支付失败，请联系老罗");
+            throw new BusinessException("支付码支付失败，请联系管理员");
         }
 
         userIntegralRecordService.changeUserIntegral(UserIntegralRecordTypeEnum.RECHARGE, payOrderInfo.getOrderId(), payOrderInfo.getUserId(),
@@ -361,8 +361,8 @@ public class PayOrderInfoServiceImpl implements PayOrderInfoService {
     }
 
     /**
-     * 轮训查询订单，针对无法使用回调的情况  实际开发中，会使用支付回调来处理订单支付逻辑，这里是解决没法使用回调的情况
-     * 比如本地开发，或者没有线上服务器的情况 微信的服务器没法回调到你本地的服务器上，采用轮询查询处理。
+     * 轮询查询第三方支付订单，针对无法使用回调的情况。
+     * 当前毕设演示主流程使用付款码支付，该逻辑作为第三方支付扩展能力保留。
      */
     @PostConstruct
     public void checkPayOrder() {

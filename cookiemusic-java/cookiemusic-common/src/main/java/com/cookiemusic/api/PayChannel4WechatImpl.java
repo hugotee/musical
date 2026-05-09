@@ -82,15 +82,15 @@ public class PayChannel4WechatImpl implements PayChannelService {
         headerMap.put("Authorization", "WECHATPAY2-SHA256-RSA2048 " + token);
         headerMap.put("Content-Type", "application/json");
         headerMap.put("Accept", "application/json");
-        if (PayTypeEnum.LAOLUO.getPayType().equals(appConfig.getPayType())) {
+        if (PayTypeEnum.PROXY.getPayType().equals(appConfig.getPayType())) {
             headerMap.put("courseOrderId", appConfig.getCourseOrderId());
         }
         String response = OKHttpUtils.postRequest4Json(payUrl, headerMap, jsonBody);
         Map<String, String> responseMap = JsonUtils.convertJson2Obj(response, Map.class);
-        log.info("微信v3接口返回:{},订单Id:{}", response, orderId);
+        log.info("第三方支付接口返回:{},订单Id:{}", response, orderId);
         String codeUrl = responseMap.get("code_url");
         if (StringTools.isEmpty(codeUrl)) {
-            throw new BusinessException("获取微信支付信息失败");
+            throw new BusinessException("获取第三方支付信息失败");
         }
         return codeUrl;
     }
@@ -160,8 +160,8 @@ public class PayChannel4WechatImpl implements PayChannelService {
     private String getToken(String method, String url, String body, String merchantId, String certSerialNo, String keyPath) {
         if (PayTypeEnum.WECHAT.getPayType().equals(appConfig.getPayType())) {
             return getToken4Wechat(method, url, body, merchantId, certSerialNo, keyPath);
-        } else if (PayTypeEnum.LAOLUO.getPayType().equals(appConfig.getPayType())) {
-            return getToken4Laoluo();
+        } else if (PayTypeEnum.PROXY.getPayType().equals(appConfig.getPayType())) {
+            return getToken4Proxy();
         }
         throw new BusinessException("请配置配置文件中的payType");
     }
@@ -193,7 +193,7 @@ public class PayChannel4WechatImpl implements PayChannelService {
         return signStr;
     }
 
-    private String getToken4Laoluo() {
+    private String getToken4Proxy() {
         String courseOrderId = appConfig.getCourseOrderId();
         return StringTools.encodeByMD5(courseOrderId + StringTools.encodeByMD5(courseOrderId));
     }
@@ -322,41 +322,5 @@ public class PayChannel4WechatImpl implements PayChannelService {
             log.error("微信V3接口解密信息失败，apiV3Key:{},associatedData:{},nonce:{},ciphertext:{}", apiV3Key, associatedData, nonce, ciphertext, e);
             throw new BusinessException("解密失败");
         }
-    }
-
-    public static void main(String[] args) {
-        String mchId = "1682060827";
-        String appId = "wx3d7c9ce879ea7141";
-        String certSerialNo = "54CEED93E0574136CD7B55BA3D5AC35353B9F8F2";
-        String keyPath = "E:\\webser\\web_app\\cookiemusic\\key\\apiclient_key.pem";
-
-        Map<String, Object> paramsMap = new HashMap<>();
-        paramsMap.put("appid", appId);
-        paramsMap.put("mchid", mchId);
-        paramsMap.put("description", "测试小程序支付");
-        paramsMap.put("out_trade_no", StringTools.getRandomString(Constants.LENGTH_30));
-        paramsMap.put("time_expire", DateUtil.format(new Date(System.currentTimeMillis() + 1000 * 60 * Constants.ORDER_TIMEOUT_MIN),
-                DateTimePatternEnum.YYYY_MM_DDTHH_MM_SS.getPattern()));
-        paramsMap.put("notify_url", "http://easyshop.byte361.com/api/payNotify/payNotify4Wechat");
-        Map<String, Object> amountMap = new HashMap<>();
-        amountMap.put("total", StringTools.convertYuan2fen4BigDecimal(new BigDecimal("2.00")));
-        amountMap.put("currency", CURRENCY);
-        paramsMap.put("amount", amountMap);
-
-        //重点 支付信息
-        String openid = "odRm96Mbs5eu7MEwCO1PtO1tL6Io";
-        Map<String, Object> payer = new HashMap<>();
-        payer.put("openid", openid);
-        paramsMap.put("payer", payer);
-
-        String jsonBody = JsonUtils.convertObj2Json(paramsMap);
-        String payUrl = "https://api.mch.weixin.qq.com/v3/pay/transactions/jsapi";
-        String token = new PayChannel4WechatImpl().getToken4Wechat("POST", payUrl, jsonBody, mchId, certSerialNo, keyPath);
-        Map<String, String> headerMap = new HashMap<>();
-        headerMap.put("Authorization", "WECHATPAY2-SHA256-RSA2048 " + token);
-        headerMap.put("Content-Type", "application/json");
-        headerMap.put("Accept", "application/json");
-        String response = OKHttpUtils.postRequest4Json(payUrl, headerMap, jsonBody);
-        log.info("jsapi支付返回信息:{}", response);
     }
 }

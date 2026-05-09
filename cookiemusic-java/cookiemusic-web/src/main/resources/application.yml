@@ -26,26 +26,26 @@ log:
 #域名
 web:
   domain: http://localhost:8090
-# 接口key
+# AI歌曲生成接口。答辩演示如不使用歌曲生成功能，可保持示例配置；纯音乐走本地 MusicGen。
 tianpuyue:
   api:
     key: Tempo-c04cf5606ba31f40988e178529050774cfupf #ai接口key
     domain: https://api.tianpuyue.cn #天谱乐官方API域名
-    courseOrderId: 20251226104834vaU5W #这里配置购买的easyshop的课程的订单号，在easyshop.byte361.com 个人中心 已购课程 右上角的订单号，复制过来
-# 微信支付
+    courseOrderId: 20251226104834vaU5W #第三方API授权订单号，仅歌曲生成接口使用
+# 第三方支付预留配置。当前毕设演示主流程使用后台付款码支付。
 pay:
   wechat:
-    appid: wx123456  #微信支付应用ID
-    mchid: 16123456  #微信支付商户ID
-    serialNo: 5D31441111111111111  # 微信支付证书编号
-    apiclientKeypath: c:/webser/web_app/easymusic/key/apiclient_key.pem  #微信证书文件
-    apiV3key: 1234567890  #apiv3 签名密钥
-  payType: laoluo  #配置为laoluo就是走老罗封装的支付接口 使用wechat就是直接走官方（自己有商户号可以使用这种方式），
-  payDomain: http://easyshop.byte361.com/api #上面payType配置为老罗那么这个域名就用我商城的域名，有微信官方商户号就配置成 https://api.mch.weixin.qq.com
-  courseOrderId: 20251226104834vaU5W #这里配置购买的easyshop的课程的订单号，在easyshop.byte361.com 个人中心 已购课程 右上角的订单号，复制过来
+    appid: wx123456  #第三方支付微信渠道应用ID占位
+    mchid: 16123456  #第三方支付微信渠道商户ID占位
+    serialNo: 5D31441111111111111  #第三方支付证书编号占位
+    apiclientKeypath: c:/webser/web_app/easymusic/key/apiclient_key.pem  #第三方支付证书文件占位
+    apiV3key: 1234567890  #第三方支付签名密钥占位
+  payType: wechat  #预留第三方支付类型；付款码支付不依赖该配置
+  payDomain: https://api.mch.weixin.qq.com #预留第三方支付网关
+  courseOrderId:  #预留第三方支付授权订单号
 #是否定时获取支付结果,音乐生成结果
 auto:
-  checkPay: true
+  checkPay: false
   checkMusic: true
 # MusicGen AI音乐生成服务地址
 musicgen:

@@ -8,6 +8,6 @@ public class TestController {
 
     @RequestMapping("/test")
     public String test() {
-        return "我要开发easyMusic";
+        return "CookieMusic 管理端运行正常";
     }
 }
