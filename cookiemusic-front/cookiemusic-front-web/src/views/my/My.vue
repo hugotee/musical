@@ -85,18 +85,21 @@ const reloadMusic = () => {
   display: flex;
   align-items: center;
   width: 100%;
-  background: #0e0123;
+  background: rgba(9, 17, 22, 0.92);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(16px);
+  padding: 8px 12px;
   .icon-refresh {
-    color: #fff;
+    color: var(--text);
     margin-left: 20px;
     cursor: pointer;
     &:hover {
-      color: var(--purple);
+      color: var(--accent);
     }
   }
 }
 .data-list {
-  margin-top: 50px;
+  margin-top: 64px;
   height: calc(100vh - 125px);
 }
 

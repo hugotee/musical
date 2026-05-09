@@ -83,7 +83,10 @@ const playList = () => {
     width: 100%;
     overflow: hidden;
     position: relative;
-    border-radius: 10px;
+    border-radius: var(--radius);
+    background: var(--cardBg);
+    border: 1px solid var(--line);
+    box-shadow: var(--softShadow);
     &:hover {
       .opbtn {
         display: flex;
@@ -92,7 +95,7 @@ const playList = () => {
         display: none;
       }
       img {
-        transform: scale(1.2);
+        transform: scale(1.08);
       }
     }
     img {
@@ -109,7 +112,9 @@ const playList = () => {
       align-items: center;
       border-radius: 50%;
       overflow: hidden;
-      background: #0003;
+      background: rgba(6, 16, 20, 0.7);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(8px);
       width: 40px;
       height: 40px;
       display: none;
@@ -146,13 +151,13 @@ const playList = () => {
       text-overflow: ellipsis;
       white-space: nowrap;
       &:hover {
-        color: #95aefc;
+        color: var(--accent);
       }
     }
     .music-prompt {
       font-size: 12px;
       font-weight: 500;
-      opacity: 0.5;
+      color: var(--text);
       margin-top: 5px;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -166,7 +171,7 @@ const playList = () => {
         margin-right: 5px;
       }
       .user-name {
-        opacity: 0.5;
+        opacity: 0.72;
         font-size: 14px;
         margin-right: 10px;
         overflow: hidden;

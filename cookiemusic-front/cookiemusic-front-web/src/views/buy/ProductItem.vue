@@ -40,14 +40,16 @@ const buy = () => {
 
 <style lang="scss" scoped>
 .product-item {
-  background: #241f47;
+  background: var(--cardBg);
+  border: 1px solid var(--line);
   width: 300px;
   height: 500px;
-  margin-right: 20px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   overflow: hidden;
   color: #fff;
   position: relative;
+  box-shadow: var(--softShadow);
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
   .cover {
     height: 200px;
     overflow: hidden;
@@ -56,7 +58,7 @@ const buy = () => {
     padding: 20px;
     .product-name {
       font-size: 22px;
-      background: linear-gradient(104deg, #f6b1ff, #ecd3ff 53%, #ea8cff);
+      background: linear-gradient(104deg, #f5fbfa, #aeece2 53%, #f0c36a);
       background-clip: text;
       -webkit-text-fill-color: transparent;
       font-weight: bold;
@@ -65,12 +67,12 @@ const buy = () => {
     .price {
       font-size: 20px;
       font-weight: 500;
-      color: #94adff;
+      color: var(--accent);
     }
     .integral {
       line-height: 48px;
       font-weight: 700;
-      background: linear-gradient(105deg, #4fdeff, #e675ff);
+      background: linear-gradient(105deg, #7de2d1, #f0c36a);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -88,14 +90,18 @@ const buy = () => {
     left: 10px;
     text-align: center;
     padding: 10px;
-    border-radius: 20px;
+    border-radius: 999px;
     background: var(--btnBg);
+    color: #061014;
+    font-weight: 800;
     margin-top: 10px;
     cursor: pointer;
+    box-shadow: var(--btnShadow);
   }
   &:hover {
-    background: linear-gradient(163.52deg, #4940a9 4.84%, #161518 47.07%);
-    outline: 2px solid var(--activeText);
+    background: var(--cardBgHover);
+    border-color: var(--lineStrong);
+    transform: translateY(-4px);
   }
 }
 

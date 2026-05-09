@@ -179,16 +179,21 @@ const updateTitle = (title) => {
 <style lang="scss" scoped>
 .music-item {
   margin: 10px;
-  padding: 10px;
+  padding: 12px;
   margin-bottom: 10px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: hsla(0, 0%, 100%, 0.2);
-  border-radius: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
   color: #fff;
   display: flex;
   align-items: center;
   overflow: hidden;
+  background: var(--cardBg);
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  &:hover {
+    background: var(--cardBgHover);
+    border-color: var(--lineStrong);
+    transform: translateY(-1px);
+  }
   .cover {
     position: relative;
     .upload-cover {
@@ -196,7 +201,7 @@ const updateTitle = (title) => {
       position: absolute;
       left: 0px;
       bottom: 0px;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(6, 16, 20, 0.76);
       z-index: 1;
       color: #fff;
       text-align: center;
@@ -210,8 +215,8 @@ const updateTitle = (title) => {
       justify-content: center;
       width: 100px;
       height: 100px;
-      background: #1f212d;
-      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
       img {
         width: 20px;
       }
@@ -226,7 +231,7 @@ const updateTitle = (title) => {
       font-size: 20px;
       cursor: pointer;
       &:hover {
-        color: var(--activeText);
+        color: var(--accent);
       }
     }
     .music-title-creating {
@@ -259,6 +264,10 @@ const updateTitle = (title) => {
     align-items: center;
     .op-btn {
       cursor: pointer;
+      color: var(--text);
+      &:hover {
+        color: var(--accent);
+      }
     }
   }
 }

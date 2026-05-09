@@ -53,17 +53,17 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .buy-title {
-  margin-top: 20px;
+  margin-top: 34px;
   text-align: center;
   color: #fff;
-  font-size: 30px;
-  font-weight: bold;
+  font-size: 32px;
+  font-weight: 900;
 }
 .integral {
   text-align: center;
   margin-top: 10px;
   font-size: 14px;
-  color: #fff;
+  color: var(--text);
   .record-btn {
     cursor: pointer;
     display: inline-block;
@@ -76,11 +76,11 @@ onMounted(() => {
   }
 }
 .product-list {
-  margin-top: 10px;
+  margin-top: 18px;
   display: flex;
   padding: 20px;
-  display: flex;
   justify-content: center;
+  gap: 20px;
 }
 
 @media (max-width: 500px) {

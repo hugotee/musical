@@ -70,15 +70,24 @@ const playList = () => {
 <style lang="scss" scoped>
 .music-item {
   display: flex;
-  padding: 0px 20px 0px 0px;
+  padding: 10px 20px 10px 10px;
   min-width: 320px;
-  height: 100px;
+  min-height: 112px;
+  background: var(--cardBg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  &:hover {
+    background: var(--cardBgHover);
+    border-color: var(--lineStrong);
+    transform: translateY(-2px);
+  }
   .cover {
-    background: #302748;
-    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
     width: 100px;
     height: 100px;
-    border-radius: 10px;
     padding: 10px;
     cursor: pointer;
     position: relative;
@@ -105,13 +114,14 @@ const playList = () => {
       white-space: nowrap;
       cursor: pointer;
       &:hover {
-        color: #95aefc;
+        color: var(--accent);
       }
     }
     .music-prompt {
       font-size: 12px;
       font-weight: 500;
-      opacity: 0.5;
+      color: var(--text);
+      opacity: 1;
       margin-top: 5px;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -131,12 +141,13 @@ const playList = () => {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        opacity: 0.5;
+        color: var(--text);
+        opacity: 1;
         text-decoration: none;
         color: #fff;
       }
       .iconfont {
-        opacity: 0.5;
+        opacity: 0.72;
         &::before {
           margin-right: 4px;
         }
@@ -158,6 +169,10 @@ const playList = () => {
     width: 80px;
     .opbtn {
       cursor: pointer;
+      color: var(--text);
+      &:hover {
+        color: var(--accent);
+      }
     }
   }
 }

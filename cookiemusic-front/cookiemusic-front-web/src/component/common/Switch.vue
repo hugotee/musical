@@ -44,25 +44,30 @@ const changeModel = (item) => {
 .switch-panel {
   display: flex;
   align-items: center;
-  background: #271b39;
-  border-radius: 25px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  border-radius: 26px;
   margin: 10px 0px;
   width: 250px;
   line-height: 35px;
   cursor: pointer;
+  padding: 3px;
   &:hover {
-    background: #3e344f;
+    background: rgba(255, 255, 255, 0.07);
   }
   .switch-item {
     width: 50%;
-    color: #fff;
+    color: var(--text);
     text-align: center;
     user-select: none;
+    border-radius: 22px;
+    transition: background 0.2s, color 0.2s;
   }
   .switch-item-active {
-    background: #fff;
-    color: #271b39;
-    border-radius: 25px;
+    background: var(--btnBg);
+    color: #061014;
+    font-weight: 700;
+    box-shadow: var(--btnShadow);
   }
 }
 </style>

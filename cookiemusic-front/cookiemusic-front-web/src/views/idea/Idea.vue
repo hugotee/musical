@@ -23,16 +23,34 @@ const route = useRoute()
 <style lang="scss" scoped>
 .create-body {
   display: flex;
+  padding: 18px 18px 0;
+  gap: 18px;
   .create-panel {
     width: 600px;
-    background: #0e0123;
-    padding: 10px;
-    border-right: 1px solid #271b39;
+    background: var(--panelBg);
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--softShadow);
   }
   .music-panel {
     flex: 1;
     width: 0;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 106px);
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 900px) {
+  .create-body {
+    flex-direction: column;
+    .create-panel,
+    .music-panel {
+      width: 100%;
+    }
   }
 }
 </style>

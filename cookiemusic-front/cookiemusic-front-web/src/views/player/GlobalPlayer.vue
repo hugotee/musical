@@ -44,7 +44,10 @@ const playMusic = () => {
   z-index: 500;
   position: fixed;
   bottom: 0px;
-  background: #1a142d;
+  background: rgba(12, 24, 31, 0.92);
+  border-top: 1px solid var(--line);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.28);
   height: 70px;
   width: calc(100% - 200px);
   color: #fff;
@@ -70,6 +73,9 @@ const playMusic = () => {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        &:hover {
+          color: var(--accent);
+        }
       }
       .music-author {
         margin-top: 5px;

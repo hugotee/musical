@@ -140,7 +140,10 @@ const showIntegralRecord = () => {
   height: 100%;
   color: #fff;
   overflow: hidden;
-  background: linear-gradient(180deg, #0000, #94adff1a);
+  background:
+    linear-gradient(180deg, rgba(13, 28, 35, 0.96), rgba(8, 17, 22, 0.98)),
+    var(--panelBgSolid);
+  border-right: 1px solid var(--line);
   .bg {
     position: fixed;
     top: 0;
@@ -151,6 +154,8 @@ const showIntegralRecord = () => {
     background-size: 100% 100%;
     background-position: center center;
     z-index: 0;
+    opacity: 0.22;
+    filter: saturate(0.4);
   }
   .left-side {
     position: absolute;
@@ -160,20 +165,27 @@ const showIntegralRecord = () => {
     display: flex;
     flex-direction: column;
     .logo {
-      font-size: 20px;
-      font-weight: bold;
-      padding: 20px;
+      font-size: 22px;
+      font-weight: 800;
+      padding: 24px 20px 18px;
+      color: var(--HiText);
+      text-shadow: 0 8px 30px rgba(125, 226, 209, 0.28);
     }
     .menu-list {
       flex: 1;
       .menu-item {
-        padding: 10px 0px 10px 20px;
+        padding: 12px 14px 12px 20px;
+        margin: 4px 12px;
         color: var(--text);
         display: flex;
         align-items: center;
         cursor: pointer;
+        border-radius: 12px;
+        transition: background 0.2s, color 0.2s, transform 0.2s;
         &:hover {
           color: var(--hiText);
+          background: rgba(255, 255, 255, 0.05);
+          transform: translateX(2px);
         }
         .iconfont {
           font-size: 20px;
@@ -185,11 +197,13 @@ const showIntegralRecord = () => {
       .active {
         color: var(--activeText);
         position: relative;
+        background: rgba(125, 226, 209, 0.1);
+        box-shadow: inset 0 0 0 1px rgba(125, 226, 209, 0.16);
         &::before {
           content: '';
-          left: 0px;
-          top: 12px;
-          bottom: 12px;
+          left: 6px;
+          top: 14px;
+          bottom: 14px;
           width: 3px;
           background: var(--activeText);
           position: absolute;
@@ -208,7 +222,11 @@ const showIntegralRecord = () => {
     display: flex;
     justify-content: space-between;
     justify-items: center;
-    padding: 10px;
+    padding: 12px 16px;
+    margin: 0 12px 8px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
     .integral {
       flex: 1;
     }
@@ -222,20 +240,22 @@ const showIntegralRecord = () => {
   }
 
   .user-info-panel {
-    padding: 10px;
+    padding: 12px;
     .login-btn {
       cursor: pointer;
       padding: 10px;
       text-align: center;
       border-radius: 50px;
       background: var(--btnBg);
+      box-shadow: var(--btnShadow);
     }
     .user-info {
       display: flex;
       align-items: center;
-      background: #fff3;
-      border-radius: 20px;
-      padding: 5px 10px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 7px 10px;
       cursor: pointer;
       .user-name {
         flex: 1;

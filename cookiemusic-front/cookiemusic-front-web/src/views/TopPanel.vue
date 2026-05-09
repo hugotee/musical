@@ -31,8 +31,11 @@ const showDrawerHandler = () => {
 @media (max-width: 500px) {
   .top-panel {
     display: flex;
-    background: #262626;
-    border-radius: 5px;
+    background: rgba(17, 31, 39, 0.92);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    backdrop-filter: blur(18px);
+    box-shadow: var(--softShadow);
     position: fixed;
     top: 10px;
     left: 10px;
@@ -48,6 +51,7 @@ const showDrawerHandler = () => {
     .title {
       color: #fff;
       margin-left: 15px;
+      font-weight: 700;
     }
   }
 }

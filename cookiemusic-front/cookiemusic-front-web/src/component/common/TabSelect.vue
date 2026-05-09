@@ -82,17 +82,28 @@ const selectTab = (item) => {
   display: flex;
   flex-wrap: wrap;
   .tab {
-    color: var(--HiText);
-    background: var(--text);
-    border-radius: 12px;
-    padding: 3px 10px;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 12px;
     margin: 0px 8px 8px 0px;
     cursor: pointer;
     user-select: none;
     font-size: 14px;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
+    &:hover {
+      color: var(--HiText);
+      border-color: var(--lineStrong);
+      transform: translateY(-1px);
+    }
   }
   .selected {
-    background: var(--activeText);
+    color: #061014;
+    background: var(--btnBg);
+    border-color: transparent;
+    font-weight: 700;
+    box-shadow: var(--btnShadow);
   }
 }
 </style>

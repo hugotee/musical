@@ -137,10 +137,15 @@ watch(
 
 <style lang="scss" scoped>
 .music-detail-body {
-  padding: 20px 0px 0px 20px;
+  padding: 24px;
   .music-panel {
     display: flex;
-    padding: 10px 10px 80px 10px;
+    padding: 24px 24px 90px;
+    margin-top: 16px;
+    background: var(--panelBg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--softShadow);
     .music-cover {
       width: 250px;
       height: 250px;
@@ -175,10 +180,12 @@ watch(
       color: #fff;
       margin-left: 30px;
       .music-title {
-        font-size: 25px;
+        font-size: 30px;
+        font-weight: 900;
       }
       .user-info {
         margin-top: 10px;
+        color: var(--text);
       }
       .action-panel {
         margin-top: 10px;
@@ -194,13 +201,13 @@ watch(
           font-size: 25px;
         }
         .active {
-          color: var(--purple);
+          color: var(--accent);
         }
         .play-btn {
           font-size: 20px;
-          background: #fff;
+          background: var(--btnBg);
           border-radius: 50%;
-          color: var(--purple);
+          color: #061014;
           width: 40px;
           height: 40px;
           display: flex;
@@ -212,13 +219,15 @@ watch(
         margin-top: 20px;
         .lyrics-title {
           font-size: 20px;
+          font-weight: 800;
         }
         .lyrics-item {
           padding: 5px 0px;
           font-size: 16px;
+          color: var(--text);
         }
         .active {
-          color: #b939f6;
+          color: var(--accentWarm);
           font-size: 18px;
         }
       }

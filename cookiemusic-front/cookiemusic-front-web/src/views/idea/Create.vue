@@ -165,20 +165,32 @@ const currentModelOptions = computed(() => {
     formData.value.musicType == 1
       ? models.filter((item) => item.dictCode === "V3")
       : models
-  return availableModels.map((item) => {
+  return [...availableModels]
+    .sort((a, b) => getModelRank(a) - getModelRank(b))
+    .map((item) => {
     const modelName = formData.value.musicType == 1 ? "MusicGen Small" : item.dictCode
     return {
       ...item,
       modelLabel: `${modelName} · ${item.dictValue}积分`,
     }
-  })
+    })
 })
+
+const getModelRank = (item) => {
+  const modelNumber = Number(String(item.dictCode || "").replace("V", ""))
+  return Number.isNaN(modelNumber) ? item.sort || 0 : modelNumber
+}
 
 const currentModelInfo = computed(() => {
   return currentModelOptions.value.find((item) => item.dictCode === formData.value.model)
 })
 
-const currentModelDesc = computed(() => currentModelInfo.value?.dictDesc || "")
+const currentModelDesc = computed(() => {
+  if (formData.value.musicType == 1 && currentModelInfo.value) {
+    return `本地 MusicGen Small 生成约30s纯音乐(${currentModelInfo.value.dictValue}积分/首)`
+  }
+  return currentModelInfo.value?.dictDesc || ""
+})
 
 const syncModelSelection = () => {
   if (currentModelOptions.value.length === 0) {
@@ -302,25 +314,26 @@ onMounted(() => {
   }
   :deep(.el-tabs__item) {
     color: var(--text);
-    font-size: 25px;
+    font-size: 24px;
+    font-weight: 800;
     padding-bottom: 10px;
   }
   :deep(.el-tabs__item.is-active) {
-    color: var(--purple);
+    color: var(--accent);
   }
   :deep(.el-tabs__active-bar) {
-    background: var(--purple);
+    background: var(--accent);
   }
   :deep(.el-tabs__nav-wrap) {
     &::after {
-      background: #2c2c2c;
+      background: var(--line);
     }
   }
 }
 .cost-hint {
   text-align: center;
   font-size: 13px;
-  color: #b7c2db;
+  color: var(--text);
   margin: 6px 0 12px 0;
   .cost-num {
     color: #ffd700;
@@ -331,11 +344,12 @@ onMounted(() => {
 .create-form {
   color: #fff;
   .input-panel {
-    background: #29244e;
-    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
     overflow: hidden;
     :deep(.el-textarea__inner) {
-      background: #29244e;
+      background: transparent;
       box-shadow: none;
       height: 100%;
       border-radius: 0px;
@@ -355,9 +369,10 @@ onMounted(() => {
       display: flex;
       justify-content: flex-end;
       .icon-magic {
-        border-radius: 5px;
+        border-radius: 999px;
         padding: 5px 10px;
-        background: #3f3a60;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--line);
         font-size: 13px;
         &::before {
           margin-right: 5px;
@@ -371,13 +386,14 @@ onMounted(() => {
     display: flex;
     .lyric-panel {
       width: 300px;
-      background: #29244d;
-      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
       overflow: hidden;
       height: 100%;
       .lyric-input {
         border-radius: 0px;
-        border-top: 1px solid var(--text);
+        border-top: 1px solid var(--line);
         :deep(.el-textarea__inner) {
           height: calc(100vh - 515px);
           color: var(--hiText);
@@ -420,13 +436,13 @@ onMounted(() => {
     height: 45px;
     font-weight: bold;
     font-size: 20px;
-    border-radius: 30px;
+    border-radius: 999px;
     margin-top: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--btnBg);
-    box-shadow: var(-btnShadow);
+    box-shadow: var(--btnShadow);
     &:hover {
       opacity: 0.9;
     }

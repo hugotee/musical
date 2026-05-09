@@ -56,9 +56,10 @@ const changeCommend = (type) => {
 
 <style lang="scss" scoped>
 .index-body {
-  padding: 10px 0px 0px 10px;
+  padding: 26px 22px 0px;
   .part-title {
-    font-size: 25px;
+    font-size: 24px;
+    font-weight: 800;
     color: #fff;
     display: flex;
     align-items: center;
@@ -66,7 +67,8 @@ const changeCommend = (type) => {
     .title-op {
       display: flex;
       .iconfont {
-        background: #3e344f;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--line);
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -74,8 +76,10 @@ const changeCommend = (type) => {
         padding: 10px;
         margin-right: 10px;
         cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
         &:hover {
-          opacity: 0.8;
+          background: rgba(125, 226, 209, 0.13);
+          transform: translateY(-1px);
         }
       }
       .disable {
@@ -88,7 +92,7 @@ const changeCommend = (type) => {
     }
   }
   .latest-title {
-    margin-top: 10px;
+    margin-top: 24px;
     .more {
       margin-left: 20px;
       text-decoration: none;
@@ -103,14 +107,15 @@ const changeCommend = (type) => {
         margin-left: 3px;
       }
       &:hover {
-        color: var(--active);
-        background: #3e344f;
+        color: var(--accent);
+        background: rgba(255, 255, 255, 0.06);
         border-radius: 15px;
       }
     }
   }
   .latest-list {
     padding-right: 10px;
+    margin-top: 8px;
   }
 }
 </style>

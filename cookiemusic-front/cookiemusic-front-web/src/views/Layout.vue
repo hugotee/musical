@@ -57,6 +57,9 @@ watch(
 <style lang="scss" scoped>
 .layout {
   height: calc(100vh);
+  background:
+    linear-gradient(90deg, rgba(7, 15, 20, 0.96), rgba(9, 17, 22, 0.78) 46%, rgba(9, 17, 22, 0.96)),
+    var(--pageBg);
   .left-body {
     position: fixed;
     height: calc(100vh);
@@ -65,6 +68,7 @@ watch(
     padding-left: 200px;
     overflow: auto;
     padding-bottom: 70px;
+    min-height: 100vh;
   }
 }
 
