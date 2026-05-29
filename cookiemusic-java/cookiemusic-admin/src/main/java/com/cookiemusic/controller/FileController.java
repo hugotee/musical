@@ -37,6 +37,11 @@ public class FileController extends ABaseController {
         if (!StringTools.pathIsOk(filePath)) {
             throw new BusinessException(ResponseCodeEnum.CODE_600);
         }
+        // 去除缓存破坏时间戳后缀，例如 cover.png&1234567890 → cover.png
+        int timestampIdx = filePath.indexOf("&");
+        if (timestampIdx != -1) {
+            filePath = filePath.substring(0, timestampIdx);
+        }
         filePath = appConfig.getProjectFolder() + Constants.FILE_FOLDER_FILE + filePath;
         String fileSuffix = StringTools.getFileSuffix(filePath);
         if (!StringTools.isEmpty(fileSuffix) && ArrayUtils.contains(Constants.IMAGES_SUFFIX, fileSuffix.toLowerCase())) {

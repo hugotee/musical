@@ -26,6 +26,15 @@ public class RecommendationServiceImpl implements RecommendationService {
     private static final int COLD_START_THRESHOLD = 3;
     private static final int CF_TOP_K = 10;
 
+    // FunkSVD 参数
+    private static final int SVD_FACTORS = 5;
+    private static final int SVD_EPOCHS = 100;
+    private static final double SVD_LR = 0.005;
+    private static final double SVD_LAMBDA = 0.15;
+
+    // Apriori 参数
+    private static final double MIN_CONFIDENCE = 0.3;
+
     @Resource
     private MusicInfoMapper<MusicInfo, MusicInfoQuery> musicInfoMapper;
 
@@ -76,6 +85,12 @@ public class RecommendationServiceImpl implements RecommendationService {
                 break;
             case "popularity":
                 scores = scoreByPopularity(candidates, maxPlay, maxGood, now);
+                break;
+            case "svd":
+                scores = scoreBySVD(candidates, userId, maxPlay, maxGood, now);
+                break;
+            case "apriori":
+                scores = scoreByApriori(candidates, userId, maxPlay, maxGood, now);
                 break;
             case "hybrid":
             default:
@@ -151,7 +166,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         return scores;
     }
 
-    /** @return true 表示有足够的偏好数据 */
+    /** @return true 表示有足够的偏好数据，使用 TF-IDF 加权替代简单计数 */
     private boolean buildContentProfile(String userId, Map<String, MusicCreation> creationMap,
                                         Map<String, Double> genre, Map<String, Double> emotion,
                                         Map<String, Double> voice) {
@@ -162,54 +177,93 @@ public class RecommendationServiceImpl implements RecommendationService {
         List<MusicInfoAction> actions = musicInfoActionMapper.selectList(q);
         if (actions.size() < COLD_START_THRESHOLD) return false;
 
+        // 1. 计算 IDF：统计每个标签出现在多少首作品中
+        Map<String, Double> genreDF = new HashMap<>();
+        Map<String, Double> emotionDF = new HashMap<>();
+        Map<String, Double> voiceDF = new HashMap<>();
+        int totalDocs = creationMap.size();
+
+        for (MusicCreation mc : creationMap.values()) {
+            if (mc.getSettings() == null) continue;
+            try {
+                JSONObject json = JSON.parseObject(mc.getSettings());
+                String g = json.getString("musicGener");
+                if (g != null && !g.isEmpty()) genreDF.merge(g, 1.0, Double::sum);
+                String e = json.getString("musicEmotion");
+                if (e != null && !e.isEmpty()) {
+                    for (String t : e.split(",")) {
+                        String s = t.trim();
+                        if (!s.isEmpty()) emotionDF.merge(s, 1.0, Double::sum);
+                    }
+                }
+                String s = json.getString("musicSex");
+                if (s != null && !s.isEmpty()) voiceDF.merge(s, 1.0, Double::sum);
+            } catch (Exception ignored) {}
+        }
+        // IDF = log(N / (1 + df))
+        for (String k : genreDF.keySet())
+            genreDF.put(k, Math.log((double) totalDocs / (1 + genreDF.get(k))));
+        for (String k : emotionDF.keySet())
+            emotionDF.put(k, Math.log((double) totalDocs / (1 + emotionDF.get(k))));
+        for (String k : voiceDF.keySet())
+            voiceDF.put(k, Math.log((double) totalDocs / (1 + voiceDF.get(k))));
+
+        // 2. 构建用户 TF-IDF 画像：Σ(TF-IDF) 对每首用户点赞的歌
         for (MusicInfoAction a : actions) {
             MusicInfo mi = musicInfoMapper.selectByMusicId(a.getMusicId());
             if (mi != null && mi.getCreationId() != null) {
                 MusicCreation mc = creationMap.get(mi.getCreationId());
                 if (mc != null && mc.getSettings() != null) {
-                    parseSettings(mc.getSettings(), genre, emotion, voice);
+                    parseSettingsTFIDF(mc.getSettings(), genre, emotion, voice, genreDF, emotionDF, voiceDF);
                 }
             }
         }
         return true;
     }
 
+    /** TF-IDF 余弦相似度：用户画像(TF-IDF向量) vs 候选歌曲(one-hot向量) */
     private double computeContentSimilarity(String settings, Map<String, Double> genrePref,
                                             Map<String, Double> emotionPref, Map<String, Double> voicePref) {
         try {
             JSONObject json = JSON.parseObject(settings);
-            double sim = 0.0;
-            int count = 0;
+            double dotProduct = 0.0;
+            int candidateTagCount = 0;
 
             String gener = json.getString("musicGener");
-            if (gener != null && genrePref.containsKey(gener)) {
-                double maxG = maxValue(genrePref);
-                sim += maxG > 0 ? genrePref.get(gener) / maxG : 0;
-                count++;
+            if (gener != null && !gener.isEmpty()) {
+                dotProduct += genrePref.getOrDefault(gener, 0.0);
+                candidateTagCount++;
             }
 
             String musicEmotion = json.getString("musicEmotion");
-            if (musicEmotion != null) {
-                double emotionScore = 0;
-                double maxE = maxValue(emotionPref);
-                int emotionCount = 0;
+            if (musicEmotion != null && !musicEmotion.isEmpty()) {
                 for (String e : musicEmotion.split(",")) {
                     String t = e.trim();
-                    if (emotionPref.containsKey(t)) {
-                        emotionScore += maxE > 0 ? emotionPref.get(t) / maxE : 0;
-                        emotionCount++;
-                    }
+                    if (t.isEmpty()) continue;
+                    dotProduct += emotionPref.getOrDefault(t, 0.0);
+                    candidateTagCount++;
                 }
-                if (emotionCount > 0) { sim += emotionScore / emotionCount; count++; }
             }
 
             String sex = json.getString("musicSex");
-            if (sex != null && voicePref.containsKey(sex)) {
-                double maxV = maxValue(voicePref);
-                sim += maxV > 0 ? voicePref.get(sex) / maxV : 0;
-                count++;
+            if (sex != null && !sex.isEmpty()) {
+                dotProduct += voicePref.getOrDefault(sex, 0.0);
+                candidateTagCount++;
             }
-            return count > 0 ? sim / count : 0.0;
+
+            if (dotProduct == 0.0 || candidateTagCount == 0) return 0.0;
+
+            // ||user_profile||
+            double userNorm = 0.0;
+            for (double v : genrePref.values()) userNorm += v * v;
+            for (double v : emotionPref.values()) userNorm += v * v;
+            for (double v : voicePref.values()) userNorm += v * v;
+            userNorm = Math.sqrt(userNorm);
+
+            // ||candidate|| = sqrt(tag_count)
+            double candidateNorm = Math.sqrt(candidateTagCount);
+
+            return dotProduct / (userNorm * candidateNorm);
         } catch (Exception e) {
             return 0.0;
         }
@@ -373,9 +427,16 @@ public class RecommendationServiceImpl implements RecommendationService {
             }
         }
 
-        Map<String, Double> scores = new LinkedHashMap<>();
+        // 第一轮：收集各算法的原始分数（分算法存储）
+        Map<String, Double> rawContent = new LinkedHashMap<>();
+        Map<String, Double> rawUserCf = new LinkedHashMap<>();
+        Map<String, Double> rawItemCf = new LinkedHashMap<>();
+        Map<String, Double> rawPop = new LinkedHashMap<>();
+        Map<String, Double> rawRecency = new LinkedHashMap<>();
+
         for (MusicInfo c : candidates) {
-            // 内容相似度
+            String mid = c.getMusicId();
+
             double contentScore = 0.0;
             if (contentReady && c.getCreationId() != null) {
                 MusicCreation mc = creationMap.get(c.getCreationId());
@@ -383,38 +444,198 @@ public class RecommendationServiceImpl implements RecommendationService {
                     contentScore = computeContentSimilarity(mc.getSettings(), genrePref, emotionPref, voicePref);
                 }
             }
+            rawContent.put(mid, contentScore);
 
-            // User-CF 分数
             double userCfScore = 0.0;
             if (cfReady) {
                 for (Map.Entry<String, Double> u : topUsers) {
                     Set<String> likes = userLikeMap.get(u.getKey());
-                    if (likes != null && likes.contains(c.getMusicId())) {
+                    if (likes != null && likes.contains(mid)) {
                         userCfScore += u.getValue();
                     }
                 }
             }
+            rawUserCf.put(mid, userCfScore);
 
-            // Item-CF 分数
-            double itemCfScore = itemCfCache.getOrDefault(c.getMusicId(), 0.0);
+            double itemCfScore = itemCfCache.getOrDefault(mid, 0.0);
+            rawItemCf.put(mid, itemCfScore);
 
-            double popScore = popularityScore(c, maxPlay, maxGood);
-            double recency = recencyScore(c, now);
+            rawPop.put(mid, popularityScore(c, maxPlay, maxGood));
+            rawRecency.put(mid, recencyScore(c, now));
+        }
 
+        // Min-Max 归一化：各算法分数映射到 [0, 1]，消除量纲差异
+        Map<String, Double> normContent = normalizeScores(rawContent);
+        Map<String, Double> normUserCf = normalizeScores(rawUserCf);
+        Map<String, Double> normItemCf = normalizeScores(rawItemCf);
+        Map<String, Double> normPop = normalizeScores(rawPop);
+        Map<String, Double> normRecency = normalizeScores(rawRecency);
+
+        // 第二轮：归一化后加权融合
+        Map<String, Double> scores = new LinkedHashMap<>();
+        for (MusicInfo c : candidates) {
+            String mid = c.getMusicId();
             double total;
             if (!contentReady && !cfReady) {
-                // 冷启动：纯热度
-                total = popScore * 0.7 + recency * 0.3;
+                total = normPop.get(mid) * 0.7 + normRecency.get(mid) * 0.3;
             } else {
-                // 混合加权
-                total = contentScore * 0.25
-                      + userCfScore * 0.25
-                      + itemCfScore * 0.25
-                      + popScore * 0.15
-                      + recency * 0.10;
+                total = normContent.get(mid) * 0.25
+                      + normUserCf.get(mid) * 0.25
+                      + normItemCf.get(mid) * 0.25
+                      + normPop.get(mid) * 0.15
+                      + normRecency.get(mid) * 0.10;
             }
+            scores.put(mid, total);
+        }
+        return scores;
+    }
 
-            scores.put(c.getMusicId(), total);
+    // ==================== FunkSVD 矩阵分解 ====================
+
+    /** 构造用户-物品交互矩阵，用 SGD 分解为隐因子向量，预测评分 */
+    private Map<String, Double> scoreBySVD(List<MusicInfo> candidates, String userId,
+                                            int maxPlay, int maxGood, long now) {
+        Map<String, Double> scores = new LinkedHashMap<>();
+        if (userId == null) {
+            return scoreByPopularity(candidates, maxPlay, maxGood, now);
+        }
+
+        Map<String, Set<String>> userLikeMap = new HashMap<>();
+        Map<String, Set<String>> musicLikeMap = new HashMap<>();
+        loadActionMaps(userLikeMap, musicLikeMap);
+
+        // 构建索引
+        List<String> users = new ArrayList<>(userLikeMap.keySet());
+        Map<String, Integer> userIdx = new HashMap<>();
+        for (int i = 0; i < users.size(); i++) userIdx.put(users.get(i), i);
+
+        Map<String, Integer> itemIdx = new HashMap<>();
+        for (int i = 0; i < candidates.size(); i++) itemIdx.put(candidates.get(i).getMusicId(), i);
+
+        int nUsers = users.size();
+        int nItems = candidates.size();
+        if (nUsers == 0 || nItems == 0) return scoreByPopularity(candidates, maxPlay, maxGood, now);
+
+        int k = SVD_FACTORS;
+
+        // 随机初始化隐因子矩阵
+        Random rand = new Random(42);
+        double[][] P = new double[nUsers][k]; // user latent factors
+        double[][] Q = new double[nItems][k]; // item latent factors
+        for (int u = 0; u < nUsers; u++)
+            for (int f = 0; f < k; f++) P[u][f] = rand.nextDouble() * 0.1;
+        for (int i = 0; i < nItems; i++)
+            for (int f = 0; f < k; f++) Q[i][f] = rand.nextDouble() * 0.1;
+
+        // SGD 训练：目标最小化 (1 - p_u^T q_i)^2 + λ(||p_u||^2 + ||q_i||^2)
+        for (int epoch = 0; epoch < SVD_EPOCHS; epoch++) {
+            for (Map.Entry<String, Set<String>> entry : userLikeMap.entrySet()) {
+                Integer ui = userIdx.get(entry.getKey());
+                if (ui == null) continue;
+                for (String mid : entry.getValue()) {
+                    Integer mi = itemIdx.get(mid);
+                    if (mi == null) continue;
+
+                    double pred = 0.0;
+                    for (int f = 0; f < k; f++) pred += P[ui][f] * Q[mi][f];
+
+                    double err = 1.0 - pred; // 喜欢=1
+
+                    for (int f = 0; f < k; f++) {
+                        double pf = P[ui][f], qf = Q[mi][f];
+                        P[ui][f] += SVD_LR * (err * qf - SVD_LAMBDA * pf);
+                        Q[mi][f] += SVD_LR * (err * pf - SVD_LAMBDA * qf);
+                    }
+                }
+            }
+        }
+
+        // 用学到的隐因子预测目标用户的评分
+        Integer targetIdx = userIdx.get(userId);
+        Set<String> targetLikes = userLikeMap.getOrDefault(userId, Collections.emptySet());
+        boolean coldStart = targetIdx == null || targetLikes.size() < COLD_START_THRESHOLD;
+
+        for (MusicInfo c : candidates) {
+            double svdScore = 0.0;
+            if (!coldStart) {
+                Integer mi = itemIdx.get(c.getMusicId());
+                if (mi != null) {
+                    for (int f = 0; f < k; f++) svdScore += P[targetIdx][f] * Q[mi][f];
+                    svdScore = Math.max(0, Math.min(1, svdScore));
+                }
+            }
+            double popScore = popularityScore(c, maxPlay, maxGood);
+            double recency = recencyScore(c, now);
+            if (coldStart) {
+                scores.put(c.getMusicId(), popScore * 0.7 + recency * 0.3);
+            } else {
+                scores.put(c.getMusicId(), svdScore * 0.7 + popScore * 0.2 + recency * 0.1);
+            }
+        }
+        return scores;
+    }
+
+    // ==================== Apriori 关联规则 ====================
+
+    /** 从所有用户的点赞记录中挖掘关联规则 "喜欢A → 喜欢B" (置信度 ≥ MIN_CONFIDENCE) */
+    private Map<String, Double> scoreByApriori(List<MusicInfo> candidates, String userId,
+                                                int maxPlay, int maxGood, long now) {
+        Map<String, Double> scores = new LinkedHashMap<>();
+        if (userId == null) {
+            return scoreByPopularity(candidates, maxPlay, maxGood, now);
+        }
+
+        Map<String, Set<String>> userLikeMap = new HashMap<>();
+        Map<String, Set<String>> musicLikeMap = new HashMap<>();
+        loadActionMaps(userLikeMap, musicLikeMap);
+
+        Set<String> targetLikes = userLikeMap.getOrDefault(userId, Collections.emptySet());
+        if (targetLikes.size() < COLD_START_THRESHOLD) {
+            return scoreByPopularity(candidates, maxPlay, maxGood, now);
+        }
+
+        // 计算所有二元关联规则的置信度: confidence(A→B) = P(B|A) = |users(A∩B)| / |users(A)|
+        Map<String, Map<String, Double>> rules = new HashMap<>();
+        for (Map.Entry<String, Set<String>> entry : userLikeMap.entrySet()) {
+            Set<String> likes = entry.getValue();
+            for (String a : likes) {
+                Map<String, Double> confMap = rules.computeIfAbsent(a, k -> new HashMap<>());
+                for (String b : likes) {
+                    if (a.equals(b)) continue;
+                    confMap.merge(b, 1.0, Double::sum);
+                }
+            }
+        }
+        // 共现次数 → 置信度
+        for (Map.Entry<String, Map<String, Double>> entry : rules.entrySet()) {
+            Set<String> aUsers = musicLikeMap.get(entry.getKey());
+            if (aUsers == null || aUsers.isEmpty()) continue;
+            double supportA = aUsers.size();
+            for (Map.Entry<String, Double> rule : entry.getValue().entrySet()) {
+                rule.setValue(rule.getValue() / supportA);
+            }
+        }
+
+        // 基于用户已点赞的歌曲触发规则，聚合得分
+        for (MusicInfo c : candidates) {
+            String mid = c.getMusicId();
+            if (targetLikes.contains(mid)) continue;
+
+            double ruleScore = 0.0;
+            int triggeredRules = 0;
+            for (String likedId : targetLikes) {
+                Map<String, Double> confMap = rules.get(likedId);
+                if (confMap == null) continue;
+                Double conf = confMap.get(mid);
+                if (conf != null && conf >= MIN_CONFIDENCE) {
+                    ruleScore += conf;
+                    triggeredRules++;
+                }
+            }
+            double finalScore = triggeredRules > 0 ? ruleScore / triggeredRules : 0.0;
+            double popScore = popularityScore(c, maxPlay, maxGood);
+            double recency = recencyScore(c, now);
+            scores.put(mid, finalScore * 0.6 + popScore * 0.3 + recency * 0.1);
         }
         return scores;
     }
@@ -433,6 +654,27 @@ public class RecommendationServiceImpl implements RecommendationService {
         return intersection / Math.sqrt((double) set1.size() * set2.size());
     }
 
+    /** Min-Max 归一化到 [0, 1]：消除各算法分数量纲差异 */
+    private Map<String, Double> normalizeScores(Map<String, Double> scores) {
+        if (scores.isEmpty()) return scores;
+        double min = Double.MAX_VALUE, max = Double.MIN_VALUE;
+        for (double v : scores.values()) {
+            if (v < min) min = v;
+            if (v > max) max = v;
+        }
+        double range = max - min;
+        Map<String, Double> result = new LinkedHashMap<>();
+        if (range < 1e-9) {
+            // 所有分数相同，均分
+            for (String k : scores.keySet()) result.put(k, 0.5);
+        } else {
+            for (Map.Entry<String, Double> e : scores.entrySet()) {
+                result.put(e.getKey(), (e.getValue() - min) / range);
+            }
+        }
+        return result;
+    }
+
     private double popularityScore(MusicInfo mi, int maxPlay, int maxGood) {
         double score = (double) mi.getPlayCount() / maxPlay * 0.5
                      + (double) mi.getGoodCount() / maxGood * 2.0;
@@ -445,28 +687,28 @@ public class RecommendationServiceImpl implements RecommendationService {
         return Math.exp(-days / 30.0);
     }
 
-    private void parseSettings(String settings, Map<String, Double> genre,
-                               Map<String, Double> emotion, Map<String, Double> voice) {
+    /** TF-IDF 版的 parseSettings：累加 IDF 权重替代简单计数 */
+    private void parseSettingsTFIDF(String settings, Map<String, Double> genre,
+                                     Map<String, Double> emotion, Map<String, Double> voice,
+                                     Map<String, Double> genreIDF, Map<String, Double> emotionIDF,
+                                     Map<String, Double> voiceIDF) {
         try {
             JSONObject json = JSON.parseObject(settings);
             String gener = json.getString("musicGener");
-            if (gener != null && !gener.isEmpty()) genre.merge(gener, 1.0, Double::sum);
+            if (gener != null && !gener.isEmpty())
+                genre.merge(gener, genreIDF.getOrDefault(gener, 0.0), Double::sum);
             String e = json.getString("musicEmotion");
             if (e != null && !e.isEmpty()) {
                 for (String t : e.split(",")) {
-                    String trimmed = t.trim();
-                    if (!trimmed.isEmpty()) emotion.merge(trimmed, 1.0, Double::sum);
+                    String s = t.trim();
+                    if (!s.isEmpty())
+                        emotion.merge(s, emotionIDF.getOrDefault(s, 0.0), Double::sum);
                 }
             }
             String sex = json.getString("musicSex");
-            if (sex != null && !sex.isEmpty()) voice.merge(sex, 1.0, Double::sum);
+            if (sex != null && !sex.isEmpty())
+                voice.merge(sex, voiceIDF.getOrDefault(sex, 0.0), Double::sum);
         } catch (Exception ignored) {}
-    }
-
-    private double maxValue(Map<String, Double> map) {
-        double max = 0;
-        for (double v : map.values()) { if (v > max) max = v; }
-        return max;
     }
 
     /** 按分数排序取 Top N，查询完整数据并保持顺序 */

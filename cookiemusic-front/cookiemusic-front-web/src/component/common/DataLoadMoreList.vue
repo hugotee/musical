@@ -4,7 +4,7 @@
       :class="[layoutType == 'grid' ? 'data-list-grad' : '']"
       :style="{
         'grid-template-columns':
-          layoutType == 'grid' ? `repeat(${gridCount}, 1fr)` : '',
+          layoutType == 'grid' ? `repeat(${gridCount}, minmax(0, 1fr))` : '',
       }"
     >
       <template v-for="(item, index) in dataSource.list">
@@ -118,6 +118,7 @@ onMounted(async () => {
     display: grid;
     grid-gap: 20px;
     padding-bottom: 10px;
+    > * { min-width: 0; overflow: hidden; }
   }
 }
 @media (max-width: 500px) {
