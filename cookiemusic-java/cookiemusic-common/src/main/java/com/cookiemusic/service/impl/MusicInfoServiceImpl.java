@@ -154,6 +154,7 @@ public class MusicInfoServiceImpl implements MusicInfoService {
         if (null != musicInfo) {
             UserInfo userInfo = this.userInfoMapper.selectByUserId(musicInfo.getUserId());
             musicInfo.setNickName(userInfo.getNickName());
+            musicInfo.setAvatar(userInfo.getAvatar());
         }
         return musicInfo;
     }
